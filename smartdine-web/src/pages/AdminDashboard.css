@@ -1,0 +1,110 @@
+/* --- Global Dashboard Styling --- */
+.admin-layout {
+  min-height: 100vh;
+  background-color: #f8fafc; /* Very light cool gray */
+  font-family: 'Inter', -apple-system, sans-serif;
+  color: #0f172a;
+}
+
+/* --- Header --- */
+.admin-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 30px;
+  height: 70px;
+  background-color: #ffffff;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.logo-section { display: flex; align-items: center; gap: 10px; }
+.logo-icon { font-size: 24px; }
+.admin-header h1 { font-size: 20px; font-weight: 700; margin: 0; }
+.admin-profile { font-size: 14px; font-weight: 600; color: #64748b; background: #f1f5f9; padding: 8px 16px; border-radius: 20px; }
+
+/* --- Layout Grid --- */
+.admin-content {
+  display: grid;
+  grid-template-columns: 350px 1fr; /* Sidebar is 350px, Grid takes the rest */
+  gap: 30px;
+  padding: 30px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+/* --- Cards --- */
+.admin-card {
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+  border: 1px solid #e2e8f0;
+  margin-bottom: 30px;
+}
+.admin-card h2 { font-size: 18px; font-weight: 700; margin-top: 0; margin-bottom: 20px; color: #0f172a; }
+.subtext { color: #64748b; font-size: 14px; margin-top: -15px; margin-bottom: 20px; }
+
+/* --- Forms & Inputs --- */
+.input-group { margin-bottom: 16px; display: flex; flex-direction: column; gap: 6px; }
+.input-group label { font-size: 13px; font-weight: 600; color: #475569; }
+.input-group input {
+  padding: 10px 14px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+.input-group input:focus { border-color: #2563eb; box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1); }
+
+.primary-btn {
+  width: 100%;
+  padding: 12px;
+  background-color: #2563eb;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  margin-top: 10px;
+  transition: background-color 0.2s;
+}
+.primary-btn:hover { background-color: #1d4ed8; }
+.primary-btn:disabled { background-color: #94a3b8; cursor: not-allowed; }
+
+/* --- QR Code Section --- */
+.qr-display {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: #f8fafc;
+  border-radius: 12px;
+  border: 1px dashed #cbd5e1;
+  margin-top: 20px;
+}
+.qr-label { margin-top: 15px; font-weight: 700; font-size: 18px; color: #0f172a; }
+
+/* --- Data Grid (Table) --- */
+.data-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+.badge { background: #eff6ff; color: #2563eb; padding: 6px 12px; border-radius: 20px; font-size: 13px; font-weight: 600; }
+
+.table-container { overflow-x: auto; }
+.admin-table { width: 100%; border-collapse: collapse; text-align: left; }
+.admin-table th { padding: 12px 16px; border-bottom: 2px solid #e2e8f0; color: #64748b; font-size: 13px; text-transform: uppercase; font-weight: 600; }
+.admin-table td { padding: 16px; border-bottom: 1px solid #e2e8f0; font-size: 14px; color: #334155; }
+.font-semibold { font-weight: 600; color: #0f172a; }
+
+.out-of-stock-row td { background-color: #fef2f2; color: #94a3b8; }
+
+/* --- Status Badges & Buttons --- */
+.status-badge { padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: 600; }
+.status-badge.active { background: #dcfce7; color: #166534; }
+.status-badge.inactive { background: #fee2e2; color: #991b1b; }
+
+.toggle-btn { padding: 6px 12px; border-radius: 6px; border: none; font-size: 12px; font-weight: 600; cursor: pointer; transition: 0.2s; }
+.btn-danger { background: #fee2e2; color: #991b1b; }
+.btn-danger:hover { background: #fecaca; }
+.btn-success { background: #dcfce7; color: #166534; }
+.btn-success:hover { background: #bbf7d0; }
