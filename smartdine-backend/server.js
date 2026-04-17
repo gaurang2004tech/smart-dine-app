@@ -8,6 +8,7 @@ const menuRoutes = require('./routes/menuRoutes');
 const orderRoutes = require('./routes/orderRoutes');
 const authRoutes = require('./routes/authRoutes');
 const verifyToken = require('./middleware/auth');
+const aiRoutes = require('./routes/aiRoutes');
 
 const app = express();
 const server = http.createServer(app);
@@ -40,6 +41,7 @@ app.set('io', io);
 app.get('/', (req, res) => res.send("SmartDine API is Running"));
 app.use('/api/menu', menuRoutes);
 app.use('/api/orders', orderRoutes);
+app.use('/api/ai', aiRoutes);
 
 
 const PORT = process.env.PORT || 3000;

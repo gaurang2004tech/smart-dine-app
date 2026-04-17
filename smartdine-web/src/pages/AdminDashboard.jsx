@@ -5,14 +5,23 @@ import './AdminDashboard.css'; // We will create this next
 
 export default function AdminDashboard() {
   const [menuItems, setMenuItems] = useState([]);
-  
+
   // Form State
   const [newItem, setNewItem] = useState({ name: '', price: '', category: 'Main Course' });
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  // QR Code State
-  const [qrTable, setQrTable] = useState('Table-1');
-
+  
+ // QR Code State
+  const [qrTable, setQrTable] = useState(() => {
+    return localStorage.getItem('savedQrTable') || 'Table-1';
+  });
+const handleQrChange = (e) => {
+    const newTable = e.target.value;
+    setQrTable(newTable);
+    localStorage.setItem('savedQrTable', newTable); 
+  };
+// AI Insights State
+  const [insight, setInsight] = useState("");
+  const [loadingAi, setLoadingAi] = useState(false);
   // ⚠️ Remember to use your actual backend IP!
   const API_URL = 'http://192.168.1.4:3000/api/menu';
 
@@ -24,7 +33,21 @@ export default function AdminDashboard() {
       console.error("Failed to fetch menu", err);
     }
   };
-
+const generateInsight = async () => {
+    setLoadingAi(true);
+    try {
+      // ⚠️ Note: We use /api/ai/insights here
+      const res = await axios.get('http://192.168.1.4:3000/api/ai/insights', {
+        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+      });
+      setInsight(res.data.insight);
+    } catch (error) {
+      console.error("AI Error:", error);
+      setInsight("AI is currently offline. Ensure your OpenAI Key is set in the .env file.");
+    } finally {
+      setLoadingAi(false);
+    }
+  }; 
  useEffect(() => {
   axios.defaults.headers.common['Authorization'] = `Bearer ${localStorage.getItem('token')}`;
     // Wrap the call in a tiny async function to make the linter happy
@@ -53,15 +76,30 @@ export default function AdminDashboard() {
     setIsSubmitting(false);
   };
 
-  const toggleStock = async (id, currentStatus) => {
-    try {
-      await axios.patch(`${API_URL}/${id}`, { inStock: !currentStatus });
-      fetchMenu(); // Refresh to show new status
-   } catch (error) {
-      console.error(error); // <-- Now the variable is being used!
-      alert("Failed to perform action.");
+const toggleStock = async (id, currentStatus) => {
+  const newStatus = !currentStatus;
+  
+  // 🌟 1. Grab the token from storage
+  const token = localStorage.getItem('token'); 
+
+  const finalUrl = API_URL.endsWith('/api/menu') 
+    ? `${API_URL}/${id}` 
+    : `${API_URL}/api/menu/${id}`;
+
+  try {
+    // 🌟 2. Send the token to the backend bouncer in the headers!
+    const response = await axios.patch(finalUrl, 
+      { inStock: newStatus },
+      { headers: { Authorization: `Bearer ${token}` } } 
+    );
+
+    if (response.status === 200) {
+      fetchMenu(); // Refresh the list
     }
-  };
+  } catch (error) {
+    console.error("Update failed:", error.response?.data || error);
+  }
+};
 
   return (
     <div className="admin-layout">
@@ -69,7 +107,10 @@ export default function AdminDashboard() {
       <header className="admin-header">
         <div className="logo-section">
           <span className="logo-icon">💼</span>
-          <h1>SmartDine Admin Console</h1>
+        <h1 style={{ fontWeight: '800', fontSize: '24px', margin: 0, display: 'flex', alignItems: 'center' }}>
+  <span style={{ color: '#6C5CE7' }}>SmartDine</span> 
+  <span style={{ color: '#2D3748', marginLeft: '8px' }}>Admin Console</span>
+</h1>
         </div>
         <div className="admin-profile">Admin User</div>
       </header>
@@ -81,6 +122,27 @@ export default function AdminDashboard() {
           
           {/* Card 1: Add New Menu Item */}
           <div className="admin-card">
+            {/* 🌟 AI INSIGHTS WIDGET 🌟 */}
+        <div className="admin-card" style={{ backgroundColor: '#1E1E2F', border: '1px solid #6C5CE7', marginBottom: '20px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
+            <h3 style={{ color: '#A0AEC0', margin: 0, fontSize: '18px' }}>✨ AI Consultant</h3>
+            <button 
+              onClick={generateInsight} 
+              disabled={loadingAi}
+              style={{ backgroundColor: '#6C5CE7', color: 'white', padding: '8px 12px', borderRadius: '8px', border: 'none', cursor: 'pointer', fontWeight: 'bold' }}
+            >
+              {loadingAi ? 'Analyzing...' : 'Refresh'}
+            </button>
+          </div>
+          
+          {insight ? (
+            <div style={{ backgroundColor: '#2D2D44', padding: '15px', borderRadius: '10px', color: '#FFF', fontSize: '14px', lineHeight: '1.4', fontStyle: 'italic', borderLeft: '4px solid #6C5CE7' }}>
+              "{insight}"
+            </div>
+          ) : (
+            <p style={{ color: '#718096', fontSize: '13px', margin: 0 }}>Click refresh to get AI business tips based on your orders.</p>
+          )}
+        </div>
             <h2>➕ Add New Item</h2>
             <form onSubmit={handleAddFood} className="admin-form">
               <div className="input-group">
@@ -119,19 +181,21 @@ export default function AdminDashboard() {
               <input 
                 type="text" 
                 value={qrTable}
-                onChange={(e) => setQrTable(e.target.value)}
+                onChange={handleQrChange}
+              placeholder="e.g., Table-2"
               />
             </div>
 
             <div className="qr-display">
               {/* This generates a real, scannable QR code! */}
-              <QRCodeSVG 
-                value={`http://192.168.1.4:5173/menu?table=${qrTable}`} 
-                size={160} 
-                bgColor={"#ffffff"}
-                fgColor={"#0f172a"}
-                level={"H"}
-              />
+              {/* This generates a real, scannable QR code! */}
+            <QRCodeSVG 
+              value={qrTable} 
+              size={160}
+              bgColor={"#ffffff"}
+              fgColor={"#0f172a"}
+              level={"H"}
+            />
               <span className="qr-label">{qrTable}</span>
             </div>
           </div>
