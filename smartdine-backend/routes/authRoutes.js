@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const User = require('../models/User');
+const Staff = require('../models/Staff');
 
 // Secret key for signing tokens (In production, put this in your .env file!)
 const JWT_SECRET = 'super_secret_smartdine_key_123';
@@ -11,14 +11,14 @@ const JWT_SECRET = 'super_secret_smartdine_key_123';
 router.post('/register', async (req, res) => {
   try {
     const { username, password, role } = req.body;
-    
+
     // Hash the password so it's safely scrambled in the database
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
-    const newUser = new User({ username, password: hashedPassword, role });
-    await newUser.save();
-    
+    const newStaff = new Staff({ username, password: hashedPassword, role });
+    await newStaff.save();
+
     res.status(201).json({ message: "User created successfully" });
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -31,17 +31,17 @@ router.post('/login', async (req, res) => {
     const { username, password } = req.body;
 
     // Check if user exists
-    const user = await User.findOne({ username });
-    if (!user) return res.status(400).json({ message: 'Invalid credentials' });
+    const staff = await Staff.findOne({ username });
+    if (!staff) return res.status(400).json({ message: 'Invalid credentials' });
 
     // Check if password matches
-    const isMatch = await bcrypt.compare(password, user.password);
+    const isMatch = await bcrypt.compare(password, staff.password);
     if (!isMatch) return res.status(400).json({ message: 'Invalid credentials' });
 
     // Generate the VIP Pass (JWT)
-    const token = jwt.sign({ id: user._id, role: user.role }, JWT_SECRET, { expiresIn: '1d' });
+    const token = jwt.sign({ id: staff._id, role: staff.role }, JWT_SECRET, { expiresIn: '1d' });
 
-    res.json({ token, username: user.username, role: user.role });
+    res.json({ token, username: staff.username, role: staff.role });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

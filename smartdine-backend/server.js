@@ -9,6 +9,7 @@ const orderRoutes = require('./routes/orderRoutes');
 const authRoutes = require('./routes/authRoutes');
 const verifyToken = require('./middleware/auth');
 const aiRoutes = require('./routes/aiRoutes');
+const userRoutes = require('./routes/userRoutes');
 
 const app = express();
 const server = http.createServer(app);
@@ -18,8 +19,9 @@ const io = new Server(server, {
 
 app.use(cors());
 app.use(express.json());
+app.use(express.static('public')); // 🖼️ Serve gourmet menu images
 app.use('/api/auth', authRoutes);
-
+app.use('/api/analytics', require('./routes/analyticsRoutes'));
 // MongoDB Connection
 mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log("✅ SmartDine DB Connected"))
@@ -28,7 +30,7 @@ mongoose.connect(process.env.MONGO_URI)
 // Real-time logic
 io.on('connection', (socket) => {
   console.log('User connected:', socket.id);
-  
+
   socket.on('disconnect', () => {
     console.log('User disconnected');
   });
@@ -42,6 +44,20 @@ app.get('/', (req, res) => res.send("SmartDine API is Running"));
 app.use('/api/menu', menuRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/ai', aiRoutes);
+app.use('/api/ratings', require('./routes/ratingRoutes'));
+app.use('/api/users', userRoutes);
+app.use('/api/reservations', require('./routes/reservationRoutes'));
+
+// 🛎️ SERVICE CALLS (Call Waiter)
+app.post('/api/notifications/call-waiter', (req, res) => {
+  const { tableNumber } = req.body;
+  const io = req.app.get('io');
+  if (io) {
+    io.emit('callWaiter', { tableNumber, timestamp: new Date() });
+    console.log(`🛎️ Service requested at Table: ${tableNumber}`);
+  }
+  res.status(200).json({ success: true, message: "Waiter is on the way!" });
+});
 
 
 const PORT = process.env.PORT || 3000;

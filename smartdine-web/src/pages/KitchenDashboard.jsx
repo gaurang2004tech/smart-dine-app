@@ -3,9 +3,12 @@ import axios from 'axios';
 import { io } from 'socket.io-client';
 import { useNavigate } from 'react-router-dom';
 import './KitchenDashboard.css';
+import KitchenSoundAlert from '../components/KitchenSoundAlert';
+import LiveOrderBadge from '../components/LiveOrderBadge';
 
 export default function KitchenDashboard() {
   const [orders, setOrders] = useState([]);
+  const [waiterCalls, setWaiterCalls] = useState([]); // 🆕 Active service requests
   const navigate = useNavigate();
 
   // ⚠️ Ensure this IP exactly matches your backend IP!
@@ -14,9 +17,9 @@ export default function KitchenDashboard() {
   const fetchOrders = async () => {
     try {
       const res = await axios.get(`${API_URL}/api/orders`);
-      
+
       // We filter out 'paid' orders so they disappear from the kitchen once finished!
-      const activeOrders = res.data.filter(order => 
+      const activeOrders = res.data.filter(order =>
         order.status && order.status.toLowerCase() !== 'paid'
       );
       setOrders(activeOrders);
@@ -28,10 +31,10 @@ export default function KitchenDashboard() {
   useEffect(() => {
     // --- 1. SECURITY BOUNCER ---
     const token = localStorage.getItem('token');
-    
+
     if (!token) {
       navigate('/login');
-      return; 
+      return;
     }
 
     // Attach token to all requests
@@ -39,23 +42,30 @@ export default function KitchenDashboard() {
 
     // Load orders on first mount
     // Load orders on first mount safely
-const loadData = async () => {
-  await fetchOrders();
-};
-loadData();
+    const loadData = async () => {
+      await fetchOrders();
+    };
+    loadData();
 
     // --- 2. REAL-TIME SOCKET CONNECTION ---
     const socket = io(API_URL);
-    
+
     // Listen for status changes
     socket.on('orderUpdated', () => {
-      fetchOrders(); 
+      fetchOrders();
     });
 
     // Listen for brand new orders
     socket.on('newOrder', () => {
       console.log("DING! New order arrived!");
-      fetchOrders(); 
+      fetchOrders();
+    });
+
+    // 🛎️ Listen for waiter calls
+    socket.on('callWaiter', (data) => {
+      console.log("🛎️ Waiter called at table:", data.tableNumber);
+      setWaiterCalls(prev => [...prev, { ...data, id: Date.now() }]);
+      // Play a sound if possible (KitchenSoundAlert already handles broad alerts)
     });
 
     return () => {
@@ -77,8 +87,8 @@ loadData();
       await axios.patch(`${API_URL}/api/orders/${orderId}/status`, {
         status: nextStatus
       });
-      
-      fetchOrders(); 
+
+      fetchOrders();
     } catch (error) {
       console.error("Failed to update status:", error);
       alert("Error updating status. Check if your token expired and try logging in again.");
@@ -89,7 +99,7 @@ loadData();
   const getStatusColor = (status) => {
     if (!status) return '';
     const safeStatus = status.toLowerCase();
-    
+
     if (safeStatus === 'pending') return 'pending';
     if (safeStatus === 'preparing') return 'preparing';
     if (safeStatus === 'ready') return 'ready';
@@ -101,7 +111,33 @@ loadData();
       <header className="kitchen-header">
         <h1>👨‍🍳 Kitchen Command Center</h1>
         <div className="live-badge">⚡ SOCKET CONNECTED</div>
+        <LiveOrderBadge apiUrl="http://192.168.1.4:3000" />
       </header>
+      <KitchenSoundAlert apiUrl="http://192.168.1.4:3000" />
+
+      {/* 🛎️ SERVICE REQUEST TOASTS */}
+      <div className="service-calls-container">
+        {waiterCalls.map(call => (
+          <div key={call.id} className={`service-call-toast ${call.isGift ? 'gourmet-gift-toast' : ''}`}>
+            <div className="service-call-content">
+              <span className="bell-icon">{call.isGift ? '🎁' : '🛎️'}</span>
+              <span className="service-call-text">
+                {call.isGift ? (
+                  <>Elite Reward for <strong>{call.customerName}</strong>!</>
+                ) : (
+                  <>Table <strong>{call.tableNumber}</strong> needs a waiter!</>
+                )}
+              </span>
+            </div>
+            <button
+              className="service-call-dismiss"
+              onClick={() => setWaiterCalls(prev => prev.filter(c => c.id !== call.id))}
+            >
+              {call.isGift ? 'SERVED' : 'DONE'}
+            </button>
+          </div>
+        ))}
+      </div>
 
       <div className="ticket-grid">
         {orders.length === 0 ? (
@@ -109,7 +145,7 @@ loadData();
         ) : (
           orders.map(order => (
             <div key={order._id} className={`ticket-card ${getStatusColor(order.status)}`}>
-              
+
               <div className="ticket-header">
                 <h2>{order.tableNumber}</h2>
                 <span className="time-badge">
@@ -123,18 +159,21 @@ loadData();
                     <span className="item-qty">{item.quantity}x</span>
                     <span className="item-name">
                       {item.menuItem ? item.menuItem.name : 'Item'}
+                      {item.instructions && (
+                        <div className="item-instructions">📝 {item.instructions}</div>
+                      )}
                     </span>
                   </div>
                 ))}
               </div>
 
-              <button 
+              <button
                 className={`status-btn ${getStatusColor(order.status)}`}
                 onClick={() => updateStatus(order._id, order.status)}
               >
                 {order.status ? order.status.toUpperCase() : 'UNKNOWN'}
               </button>
-              
+
             </div>
           ))
         )}

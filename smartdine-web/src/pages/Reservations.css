@@ -1,0 +1,280 @@
+/* Reservations.css - Premium SmartDine Aesthetic */
+
+:root {
+    --primary-gold: #c5a059;
+    --primary-gold-dark: #a88a4a;
+    --bg-dark: #0f1115;
+    --card-bg: rgba(255, 255, 255, 0.03);
+    --card-border: rgba(255, 255, 255, 0.1);
+    --text-main: #f8f9fa;
+    --text-muted: #a0aec0;
+    --pending: #f59e0b;
+    --confirmed: #10b981;
+    --completed: #3b82f6;
+    --cancelled: #ef4444;
+}
+
+.res-layout {
+    min-height: 100vh;
+    background: radial-gradient(circle at top left, #1a1c23 0%, #0f1115 100%);
+    color: var(--text-main);
+    padding: 2rem;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+.res-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 3rem;
+    border-bottom: 1px solid var(--card-border);
+    padding-bottom: 1.5rem;
+}
+
+.res-header h1 {
+    font-size: 2rem;
+    font-weight: 300;
+    letter-spacing: -0.02em;
+    margin: 0;
+}
+
+.res-back {
+    color: var(--text-muted);
+    text-decoration: none;
+    font-size: 0.9rem;
+    transition: color 0.2s;
+}
+
+.res-back:hover {
+    color: var(--primary-gold);
+}
+
+.res-badge {
+    background: rgba(197, 160, 89, 0.1);
+    color: var(--primary-gold);
+    padding: 0.5rem 1rem;
+    border-radius: 2rem;
+    font-weight: 600;
+    font-size: 0.85rem;
+    border: 1px solid rgba(197, 160, 89, 0.2);
+}
+
+.res-loading {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    font-size: 1.2rem;
+    color: var(--primary-gold);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+}
+
+.res-empty {
+    text-align: center;
+    padding: 5rem;
+    color: var(--text-muted);
+    background: var(--card-bg);
+    border-radius: 1rem;
+    border: 1px dashed var(--card-border);
+}
+
+.res-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 1.5rem;
+}
+
+.res-card {
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: 1.25rem;
+    padding: 1.5rem;
+    backdrop-filter: blur(10px);
+    transition: transform 0.3s ease, border-color 0.3s ease;
+    display: flex;
+    flex-direction: column;
+}
+
+.res-card:hover {
+    transform: translateY(-5px);
+    border-color: rgba(197, 160, 89, 0.3);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+}
+
+.res-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 1.5rem;
+}
+
+.res-card-header h3 {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--primary-gold);
+}
+
+.status-pill {
+    font-size: 0.7rem;
+    padding: 0.25rem 0.6rem;
+    border-radius: 0.5rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+}
+
+.status-pill.pending {
+    background: rgba(245, 158, 11, 0.1);
+    color: var(--pending);
+}
+
+.status-pill.confirmed {
+    background: rgba(16, 185, 129, 0.1);
+    color: var(--confirmed);
+}
+
+.status-pill.completed {
+    background: rgba(59, 130, 246, 0.1);
+    color: var(--completed);
+}
+
+.status-pill.cancelled {
+    background: rgba(239, 68, 68, 0.1);
+    color: var(--cancelled);
+}
+
+.res-details {
+    margin-bottom: 1.5rem;
+    flex-grow: 1;
+}
+
+.res-details p {
+    margin: 0.5rem 0;
+    font-size: 0.9rem;
+    color: var(--text-muted);
+}
+
+.res-details strong {
+    color: var(--text-main);
+    margin-right: 0.5rem;
+}
+
+.res-requests {
+    background: rgba(255, 255, 255, 0.02);
+    padding: 0.75rem;
+    border-radius: 0.5rem;
+    margin-top: 1rem !important;
+    border-left: 2px solid var(--primary-gold);
+}
+
+.res-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    margin-top: auto;
+}
+
+.res-actions button {
+    cursor: pointer;
+    border: none;
+    padding: 0.6rem;
+    border-radius: 0.6rem;
+    font-weight: 600;
+    font-size: 0.85rem;
+    transition: all 0.2s;
+}
+
+.confirm-btn {
+    background: var(--confirmed);
+    color: white;
+}
+
+.confirm-btn:hover {
+    background: #0ca678;
+    filter: brightness(1.1);
+}
+
+.complete-btn {
+    background: var(--completed);
+    color: white;
+}
+
+.complete-btn:hover {
+    background: #2563eb;
+    filter: brightness(1.1);
+}
+
+.cancel-btn {
+    background: transparent;
+    color: var(--cancelled);
+    border: 1px solid rgba(239, 68, 68, 0.3) !important;
+}
+
+.cancel-btn:hover {
+    background: rgba(239, 68, 68, 0.1);
+}
+
+.assign-group {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+}
+
+.assign-group input {
+    flex-grow: 1;
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px solid var(--card-border);
+    border-radius: 0.5rem;
+    color: white;
+    padding: 0.4rem 0.75rem;
+    font-size: 0.85rem;
+}
+
+.assign-group input:focus {
+    outline: none;
+    border-color: var(--primary-gold);
+}
+
+.delete-icon {
+    background: transparent !important;
+    font-size: 1.1rem !important;
+    padding: 0.4rem !important;
+}
+
+.delete-icon:hover {
+    background: rgba(239, 68, 68, 0.1) !important;
+}
+
+/* Animations */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.res-card {
+    animation: fadeIn 0.4s ease forwards;
+}
+
+@media (max-width: 768px) {
+    .res-layout {
+        padding: 1rem;
+    }
+
+    .res-header {
+        flex-direction: column;
+        gap: 1rem;
+        text-align: center;
+    }
+
+    .res-header h1 {
+        font-size: 1.5rem;
+    }
+}

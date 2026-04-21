@@ -37,7 +37,7 @@ export default function Login() {
       }
 
     } catch (err) {
-      console.error(err); 
+      console.error(err);
       setError('Invalid username or password');
     }
     setIsLoading(false);
@@ -57,23 +57,23 @@ export default function Login() {
         <form onSubmit={handleLogin}>
           <div className="input-group">
             <label>Username</label>
-            <input 
-              type="text" 
-              value={username} 
-              onChange={(e) => setUsername(e.target.value)} 
-              required 
+            <input
+              type="text"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              required
             />
           </div>
           <div className="input-group">
             <label>Password</label>
-            <input 
-              type="password" 
-              value={password} 
-              onChange={(e) => setPassword(e.target.value)} 
-              required 
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
             />
           </div>
-          
+
           <button type="submit" className="login-btn" disabled={isLoading}>
             {isLoading ? 'Authenticating...' : 'Sign In'}
           </button>

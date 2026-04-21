@@ -20,7 +20,7 @@ export default function Menu({ route }) {
   return (
     <View style={{ flex: 1, backgroundColor: '#fff', padding: 20 }}>
       <Text style={{ fontSize: 24, fontWeight: 'bold' }}>Table {tableId} Menu</Text>
-      
+
       <FlatList
         data={items}
         keyExtractor={(item) => item._id}
@@ -31,7 +31,7 @@ export default function Menu({ route }) {
               <Text style={styles.itemName}>{item.name}</Text>
               <Text>₹{item.price}</Text>
             </View>
-            <TouchableOpacity 
+            <TouchableOpacity
               onPress={() => addToCart(item)}
               style={styles.addButton}
             >

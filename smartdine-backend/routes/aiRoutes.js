@@ -33,7 +33,7 @@ router.get('/insights', async (req, res) => {
     });
 
     res.json({ insight: completion.choices[0].message.content });
-    
+
   } catch (error) {
     console.error(error);
     res.status(500).json({ insight: "AI is currently resting. Please try again later." });

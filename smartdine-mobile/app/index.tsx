@@ -1,13 +1,17 @@
 import React, { useState } from 'react';
-import { Text, View, StyleSheet, TouchableOpacity } from 'react-native';
+import SplashScreen from '../components/SplashScreen';
+import { Text, View, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { useRouter } from 'expo-router';
 import { Scan } from 'lucide-react-native';
 
 export default function ScannerScreen() {
+  const [showSplash, setShowSplash] = useState(true);
   const [permission, requestPermission] = useCameraPermissions();
   const [scanned, setScanned] = useState(false);
   const router = useRouter();
+
+  if (showSplash) return <SplashScreen onFinish={() => setShowSplash(false)} />;
 
   if (!permission) return <View />;
   if (!permission.granted) {
@@ -24,14 +28,34 @@ export default function ScannerScreen() {
   }
 
   const handleBarCodeScanned = ({ data }: { data: string }) => {
+    if (!data || scanned) return;
     setScanned(true);
-    // Navigates to /menu and passes the tableId
-    router.push({
-      pathname: "/menu",
-      params: { tableId: data }
-    });
-    // Reset scanner after a short delay
-    setTimeout(() => setScanned(false), 2000);
+
+    // 🛡️ SECURITY GATE: Ask for confirmation before leaving the scanner
+    // This prevents "ghost scans" from jumping to the menu accidentally.
+    Alert.alert(
+      "Table Detected! 🍽️",
+      `Would you like to enter the menu for ${data}?`,
+      [
+        {
+          text: "Cancel",
+          onPress: () => setScanned(false), // Reactivate scanner
+          style: "cancel"
+        },
+        {
+          text: "Enter Menu",
+          onPress: () => {
+            router.push({
+              pathname: "/menu",
+              params: { tableId: data }
+            });
+            // Keep scanned=true for a bit longer to prevent immediate re-trigger
+            setTimeout(() => setScanned(false), 2000);
+          },
+          style: "default"
+        }
+      ]
+    );
   };
 
   return (
@@ -49,6 +73,12 @@ export default function ScannerScreen() {
       </View>
 
       <View style={styles.footer}>
+        <TouchableOpacity
+          style={styles.reserveButton}
+          onPress={() => router.push('/reservations')}
+        >
+          <Text style={styles.reserveButtonText}>📅 Book a Table</Text>
+        </TouchableOpacity>
         <Scan {...({ stroke: "#000", size: 32 } as any)} />
       </View>
     </View>
@@ -73,5 +103,17 @@ const styles = StyleSheet.create({
   camera: { flex: 1 },
   button: { backgroundColor: '#000', padding: 15, borderRadius: 10 },
   buttonText: { color: '#fff', fontWeight: 'bold' },
-  footer: { flex: 1, justifyContent: 'center', alignItems: 'center' }
+  footer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  reserveButton: {
+    position: 'absolute',
+    top: 0,
+    backgroundColor: '#F3F4F6',
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    marginBottom: 20
+  },
+  reserveButtonText: { fontSize: 14, fontWeight: '700', color: '#111827' }
 });
