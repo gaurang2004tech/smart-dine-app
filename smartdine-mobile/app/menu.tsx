@@ -31,7 +31,7 @@ export default function MenuScreen() {
 
   // 🌟 Read the table number passed from the QR scanner (index.tsx)
   const { tableId } = useLocalSearchParams<{ tableId: string }>();
-  const API_URL = 'http://192.168.1.4:3000';
+  const API_URL = ' https://smartdine-backend-ao8c.onrender.com';
 
   // Resolve table number: prefer fresh QR param, then AsyncStorage, then fallback to redirection
   useEffect(() => {

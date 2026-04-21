@@ -12,7 +12,7 @@ export default function KitchenDashboard() {
   const navigate = useNavigate();
 
   // ⚠️ Ensure this IP exactly matches your backend IP!
-  const API_URL = 'http://192.168.1.4:3000';
+  const API_URL = 'https://smartdine-backend-ao8c.onrender.com';
 
   const fetchOrders = async () => {
     try {
@@ -111,9 +111,9 @@ export default function KitchenDashboard() {
       <header className="kitchen-header">
         <h1>👨‍🍳 Kitchen Command Center</h1>
         <div className="live-badge">⚡ SOCKET CONNECTED</div>
-        <LiveOrderBadge apiUrl="http://192.168.1.4:3000" />
+        <LiveOrderBadge apiUrl="https://smartdine-backend-ao8c.onrender.com" />
       </header>
-      <KitchenSoundAlert apiUrl="http://192.168.1.4:3000" />
+      <KitchenSoundAlert apiUrl="https://smartdine-backend-ao8c.onrender.com" />
 
       {/* 🛎️ SERVICE REQUEST TOASTS */}
       <div className="service-calls-container">

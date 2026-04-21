@@ -23,7 +23,7 @@ export default function TrackingScreen() {
   const [tableOrders, setTableOrders] = useState<any[]>([]);
   const [fetchingTable, setFetchingTable] = useState(false);
 
-  const API_URL = 'http://192.168.1.4:3000';
+  const API_URL = 'https://smartdine-backend-ao8c.onrender.com';
 
   const fetchOrder = async () => {
     try {

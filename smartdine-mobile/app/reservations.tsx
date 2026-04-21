@@ -9,7 +9,7 @@ import { BlurView } from 'expo-blur';
 import { Calendar, Clock, Users, MessageSquare, ChevronLeft } from 'lucide-react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 
-const API_URL = 'http://192.168.1.4:3000';
+const API_URL = 'https://smartdine-backend-ao8c.onrender.com';
 
 export default function ReservationsScreen() {
     const router = useRouter();

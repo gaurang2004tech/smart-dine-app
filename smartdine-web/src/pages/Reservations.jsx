@@ -3,7 +3,7 @@ import axios from 'axios';
 import { Link } from 'react-router-dom';
 import './Reservations.css';
 
-const API_URL = 'http://192.168.1.4:3000';
+const API_URL = 'https://smartdine-backend-ao8c.onrender.com';
 
 export default function Reservations() {
     const [reservations, setReservations] = useState([]);

@@ -26,7 +26,7 @@ export default function AdminDashboard() {
   const [loadingAi, setLoadingAi] = useState(false);
   const [waiterCalls, setWaiterCalls] = useState([]); // 🆕 Service requests
   // ⚠️ Remember to use your actual backend IP!
-  const API_URL = 'http://192.168.1.4:3000/api/menu';
+  const API_URL = 'https://smartdine-backend-ao8c.onrender.com/api/menu';
 
   const fetchMenu = async () => {
     try {
@@ -40,7 +40,7 @@ export default function AdminDashboard() {
     setLoadingAi(true);
     try {
       // ⚠️ Note: We use /api/ai/insights here
-      const res = await axios.get('http://192.168.1.4:3000/api/ai/insights', {
+      const res = await axios.get('https://smartdine-backend-ao8c.onrender.com/api/ai/insights', {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
       });
       setInsight(res.data.insight);
@@ -61,7 +61,7 @@ export default function AdminDashboard() {
     loadData();
 
     // ── Real-time Waiter Calls ──
-    const socket = io('http://192.168.1.4:3000');
+    const socket = io('https://smartdine-backend-ao8c.onrender.com');
     socket.on('callWaiter', (data) => {
       setWaiterCalls(prev => [...prev, { ...data, id: Date.now() }]);
     });
