@@ -1,50 +1,69 @@
-# Welcome to your Expo app 👋
+# 📱 SmartDine Mobile Application
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+The **SmartDine Mobile App** is a high-performance customer interface built with **Expo** and **React Native**. It allows customers to browse the menu, place orders via table QR codes, and engage with the restaurant's loyalty program.
 
-## Get started
+---
 
-1. Install dependencies
+## ✨ Core Features
 
-   ```bash
-   npm install
-   ```
+### 🔍 QR Table Discovery
+- Uses `expo-camera` to instantly scan table-specific QR codes.
+- Automates session management by linking orders to the correct physical table.
 
-2. Start the app
+### 🍱 Interactive Gourmet Menu
+- **Luxe UI**: High-fidelity menu presentation with smooth animations and haptic feedback.
+- **Detailed Modals**: Full-screen item details with dietary indicators (Veg/Non-Veg/Spicy).
+- **Smart Filtering**: Filter by category or dietary type (Veg only toggle).
 
-   ```bash
-   npx expo start
-   ```
+### 🏆 Loyalty & Membership
+- **Black Card System**: Track points and loyalty levels in real-time.
+- **Gift Claims**: Celebratory confetti animations when claiming rewards.
 
-In the output, you'll find options to open the app in a
+### 🛵 Live Order Tracking
+- Real-time status updates (Pending → Preparing → Ready → Served) via **Socket.IO**.
+- Visual timeline for order progress.
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+---
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+## 🛠️ Project Structure
 
-## Get a fresh project
-
-When you're ready, run:
-
-```bash
-npm run reset-project
+```text
+smartdine-mobile/
+├── app/               # Expo Router pages (index, menu, reservations, tracking)
+├── components/        # Reusable UI components (Confetti, Modals, Timeline)
+├── assets/            # Fonts, images, and brand assets
+├── hooks/             # Custom React hooks
+└── constants/         # Theme colors and configuration
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+---
 
-## Learn more
+## 🚦 Getting Started
 
-To learn more about developing your project with Expo, look at the following resources:
+### 1. Install Dependencies
+```bash
+npm install
+```
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+### 2. Configure Environment
+Update the `API_URL` in `app/menu.tsx` and other screens to point to your live backend.
 
-## Join the community
+### 3. Launch Development Server
+```bash
+npx expo start
+```
 
-Join our community of developers creating universal apps.
+### 4. Open on Physical Device
+1.  Install **Expo Go** from the App Store or Play Store.
+2.  Scan the QR code displayed in your terminal using your phone's camera.
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+---
+
+## 🔌 Hardware Integrations
+- **Camera**: For QR code table scanning.
+- **Haptics**: Subtle vibrations for cart actions (`expo-haptics`).
+- **Sound**: Notification alerts for service updates.
+
+---
+
+© 2026 SmartDine. All Systems Operational.
