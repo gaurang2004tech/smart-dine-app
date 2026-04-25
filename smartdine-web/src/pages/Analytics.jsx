@@ -15,6 +15,7 @@
 
 import { useState, useEffect } from 'react';
 import axios from 'axios';
+import { io } from 'socket.io-client';
 import './Analytics.css';
 
 const API_URL = 'https://smartdine-backend-ao8c.onrender.com';
@@ -23,14 +24,29 @@ export default function Analytics() {
     const [orders, setOrders] = useState([]);
     const [loading, setLoading] = useState(true);
 
+    const fetchOrders = async () => {
+        try {
+            const res = await axios.get(`${API_URL}/api/orders`);
+            setOrders(res.data);
+        } catch (err) {
+            console.error('Analytics fetch failed:', err);
+        } finally {
+            setLoading(false);
+        }
+    };
+
     useEffect(() => {
         const token = localStorage.getItem('token');
         axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
 
-        axios.get(`${API_URL}/api/orders`)
-            .then(res => setOrders(res.data))
-            .catch(err => console.error('Analytics fetch failed:', err))
-            .finally(() => setLoading(false));
+        fetchOrders();
+
+        // ── Real-time Updates ──
+        const socket = io(API_URL);
+        socket.on('newOrder', fetchOrders);
+        socket.on('orderUpdated', fetchOrders);
+
+        return () => socket.disconnect();
     }, []);
 
     // --- Computed metrics ---
@@ -55,8 +71,11 @@ export default function Analytics() {
     const itemFrequency = {};
     orders.forEach(order => {
         order.items.forEach(item => {
-            const name = item.menuItem?.name ?? 'Unknown';
-            itemFrequency[name] = (itemFrequency[name] || 0) + (item.quantity ?? 1);
+            // 🛡️ Filter Hack: Only count real items with names
+            if (item.menuItem && item.menuItem.name) {
+                const name = item.menuItem.name;
+                itemFrequency[name] = (itemFrequency[name] || 0) + (item.quantity ?? 1);
+            }
         });
     });
 
