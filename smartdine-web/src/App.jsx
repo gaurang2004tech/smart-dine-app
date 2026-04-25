@@ -5,6 +5,7 @@ import Login from './pages/Login';
 import Analytics from './pages/Analytics';
 import Home from './pages/Home';
 import Reservations from './pages/Reservations';
+import InventoryDashboard from './pages/InventoryDashboard';
 
 function App() {
   return (
@@ -16,6 +17,7 @@ function App() {
         <Route path="/kitchen" element={<KitchenDashboard />} />
         <Route path="/analytics" element={<Analytics />} />
         <Route path="/reservations" element={<Reservations />} />
+        <Route path="/inventory" element={<InventoryDashboard />} />
         {/* Redirect unknown routes back to home */}
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>

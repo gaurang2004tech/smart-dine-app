@@ -16,7 +16,11 @@ const menuItemSchema = new mongoose.Schema({
   vintage: String,
   isCellar: { type: Boolean, default: false },
   isSpicy: { type: Boolean, default: false },
-  inStock: { type: Boolean, default: true }
+  inStock: { type: Boolean, default: true },
+  recipe: [{
+    ingredient: { type: mongoose.Schema.Types.ObjectId, ref: 'Ingredient' },
+    quantity: { type: Number, required: true } // Quantity needed for 1 portion
+  }]
 });
 
 module.exports = mongoose.model('MenuItem', menuItemSchema);

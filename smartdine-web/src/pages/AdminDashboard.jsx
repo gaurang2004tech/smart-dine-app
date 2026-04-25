@@ -128,6 +128,7 @@ export default function AdminDashboard() {
           </h1>
         </div>
         <div className="admin-profile">
+          <Link to="/inventory" style={{ marginRight: '20px', color: '#6C5CE7', fontWeight: 'bold' }}>📦 Inventory</Link>
           <Link to="/reservations" style={{ marginRight: '20px', color: '#6C5CE7', fontWeight: 'bold' }}>📅 Reservations</Link>
           Admin User
         </div>

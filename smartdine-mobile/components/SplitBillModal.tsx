@@ -9,7 +9,7 @@ import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 
-const API_URL = 'http://192.168.1.4:3000';
+const API_URL = 'https://smartdine-backend-ao8c.onrender.com';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 

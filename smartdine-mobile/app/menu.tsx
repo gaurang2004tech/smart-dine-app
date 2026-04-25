@@ -31,7 +31,7 @@ export default function MenuScreen() {
 
   // 🌟 Read the table number passed from the QR scanner (index.tsx)
   const { tableId } = useLocalSearchParams<{ tableId: string }>();
-  const API_URL = ' https://smartdine-backend-ao8c.onrender.com';
+  const API_URL = 'https://smartdine-backend-ao8c.onrender.com';
 
   // Resolve table number: prefer fresh QR param, then AsyncStorage, then fallback to redirection
   useEffect(() => {
@@ -110,7 +110,7 @@ export default function MenuScreen() {
 
   const displayedItems = menuItems
     .filter(item => activeCategory === 'All' || item.category === activeCategory)
-    .filter(item => !isVegOnly || item.dietaryType === 'Veg')
+    .filter(item => !isVegOnly || item.dietaryType?.toLowerCase() === 'veg')
     .filter(item =>
       searchQuery.trim() === '' ||
       item.name.toLowerCase().includes(searchQuery.toLowerCase())

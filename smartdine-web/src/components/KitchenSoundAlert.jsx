@@ -1,17 +1,17 @@
 /**
- * KitchenSoundAlert.jsx
- * ---------------------
- * A drop-in component that plays a "ding" sound AND shows a toast
- * notification when a new order arrives via Socket.IO.
- *
- * HOW TO USE:
- *   import KitchenSoundAlert from '../components/KitchenSoundAlert';
- *
- *   // Add inside KitchenDashboard's JSX (before or after <header>):
- *   <KitchenSoundAlert apiUrl="http://192.168.1.4:3000" />
- *
- * No sound files or extra libraries needed — uses Web Audio API.
- */
+* KitchenSoundAlert.jsx
+* ---------------------
+* A drop-in component that plays a "ding" sound AND shows a toast
+* notification when a new order arrives via Socket.IO.
+*
+* HOW TO USE:
+*   import KitchenSoundAlert from '../components/KitchenSoundAlert';
+*
+*   // Add inside KitchenDashboard's JSX (before or after <header>):
+*   <KitchenSoundAlert apiUrl="https://smartdine-backend-ao8c.onrender.com" />
+*
+* No sound files or extra libraries needed — uses Web Audio API.
+*/
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { io } from 'socket.io-client';

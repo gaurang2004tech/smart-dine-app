@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, FlatList, TouchableOpacity, Image } from 'react-native';
 import axios from 'axios';
 
-const API_URL = "http://192.168.1.4:3000/api/menu"; // Use your actual IP, not localhost
+const API_URL = "https://smartdine-backend-ao8c.onrender.com/api/menu"; // Use your actual IP, not localhost
 
 export default function Menu({ route }) {
   const { tableId } = route.params;

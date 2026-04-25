@@ -1,5 +1,6 @@
 const router = require('express').Router();
 const Customer = require('../models/Customer');
+const Ingredient = require('../models/Ingredient');
 
 const rewardPoints = async (phoneNumber, amount) => {
   if (!phoneNumber || !amount) return;
@@ -60,6 +61,27 @@ router.patch('/:id/status', verifyToken, async (req, res) => {
 
     if (!updatedOrder) {
       return res.status(404).json({ message: 'Order not found' });
+    }
+
+    // 📦 INVENTORY AUTO-DEDUCTION: Triggered when order is "served"
+    if (req.body.status?.toLowerCase() === 'served') {
+      try {
+        // Re-fetch with populated recipes
+        const order = await Order.findById(updatedOrder._id).populate('items.menuItem');
+        for (const item of order.items) {
+          if (item.menuItem && item.menuItem.recipe) {
+            for (const recipeEntry of item.menuItem.recipe) {
+              await Ingredient.findByIdAndUpdate(
+                recipeEntry.ingredient,
+                { $inc: { currentStock: -(recipeEntry.quantity * (item.quantity || 1)) } }
+              );
+            }
+          }
+        }
+        console.log(`📦 Inventory deducted for Order: ${updatedOrder._id}`);
+      } catch (err) {
+        console.error('❌ Inventory Deduction Failed:', err);
+      }
     }
 
     // --- NEW REAL-TIME MAGIC ---
