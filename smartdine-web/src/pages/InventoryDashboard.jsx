@@ -7,26 +7,62 @@ const InventoryDashboard = () => {
     const [suppliers, setSuppliers] = useState([]);
     const [loading, setLoading] = useState(true);
 
-    // 🛠️ DEV TIP: Use localhost:3000 while testing locally, then swap to your Render URL for production
+    // Modal & Form States
+    const [showIngModal, setShowIngModal] = useState(false);
+    const [showSupModal, setShowSupModal] = useState(false);
+    const [newIng, setNewIng] = useState({ name: '', category: 'Dry', unit: 'kg', currentStock: 0, minStockLevel: 5, supplier: '' });
+    const [newSup, setNewSup] = useState({ name: '', phone: '', categories: [] });
+
     const API_URL = "https://smartdine-backend-ao8c.onrender.com/api/inventory";
 
+    const fetchData = async () => {
+        try {
+            const [ingRes, supRes] = await Promise.all([
+                axios.get(`${API_URL}/ingredients`),
+                axios.get(`${API_URL}/suppliers`)
+            ]);
+            setIngredients(ingRes.data);
+            setSuppliers(supRes.data);
+        } catch (err) {
+            console.error("Failed to fetch inventory data", err);
+        } finally {
+            setLoading(false);
+        }
+    };
+
     useEffect(() => {
-        const fetchData = async () => {
-            try {
-                const [ingRes, supRes] = await Promise.all([
-                    axios.get(`${API_URL}/ingredients`),
-                    axios.get(`${API_URL}/suppliers`)
-                ]);
-                setIngredients(ingRes.data);
-                setSuppliers(supRes.data);
-            } catch (err) {
-                console.error("Failed to fetch inventory data", err);
-            } finally {
-                setLoading(false);
-            }
-        };
         fetchData();
     }, []);
+
+    const handleAddIngredient = async (e) => {
+        e.preventDefault();
+        try {
+            const token = localStorage.getItem('token');
+            await axios.post(`${API_URL}/ingredients`, newIng, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            setShowIngModal(false);
+            setNewIng({ name: '', category: 'Dry', unit: 'kg', currentStock: 0, minStockLevel: 5, supplier: '' });
+            fetchData();
+        } catch (err) {
+            alert("Failed to add ingredient. Ensure you are logged in.");
+        }
+    };
+
+    const handleAddSupplier = async (e) => {
+        e.preventDefault();
+        try {
+            const token = localStorage.getItem('token');
+            await axios.post(`${API_URL}/suppliers`, { ...newSup, categories: newSup.categories.split(',').map(s => s.trim()) }, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            setShowSupModal(false);
+            setNewSup({ name: '', phone: '', categories: '' });
+            fetchData();
+        } catch (err) {
+            alert("Failed to add supplier.");
+        }
+    };
 
     const lowStockCount = ingredients.filter(i => i.currentStock <= i.minStockLevel).length;
 
@@ -39,7 +75,7 @@ const InventoryDashboard = () => {
                     <h1>Inventory Management</h1>
                     <p style={{ color: '#64748b' }}>Track and manage your kitchen raw materials</p>
                 </div>
-                <button className="action-btn btn-primary">+ Add New Ingredient</button>
+                <button className="action-btn btn-primary" onClick={() => setShowIngModal(true)}>+ Add New Ingredient</button>
             </header>
 
             <div className="stats-grid">
@@ -97,12 +133,84 @@ const InventoryDashboard = () => {
                         <div key={sup._id} className="supplier-card">
                             <h4>{sup.name}</h4>
                             <p>📞 {sup.phone}</p>
-                            <p>📦 {sup.categories.join(', ')}</p>
+                            <p>📦 {Array.isArray(sup.categories) ? sup.categories.join(', ') : sup.categories}</p>
                         </div>
                     ))}
-                    <button className="action-btn btn-primary" style={{ width: '100%', marginTop: '10px' }}>Manage Vendors</button>
+                    <button className="action-btn btn-primary" style={{ width: '100%', marginTop: '10px' }} onClick={() => setShowSupModal(true)}>Manage Vendors</button>
                 </div>
             </div>
+
+            {/* --- Modals --- */}
+
+            {showIngModal && (
+                <div className="modal-overlay">
+                    <div className="modal-content">
+                        <h2>Add New Ingredient</h2>
+                        <form onSubmit={handleAddIngredient}>
+                            <div className="form-group">
+                                <label>Ingredient Name</label>
+                                <input type="text" required value={newIng.name} onChange={e => setNewIng({ ...newIng, name: e.target.value })} />
+                            </div>
+                            <div className="form-group">
+                                <label>Category</label>
+                                <select value={newIng.category} onChange={e => setNewIng({ ...newIng, category: e.target.value })}>
+                                    <option>Dry</option>
+                                    <option>Fresh</option>
+                                    <option>Frozen</option>
+                                    <option>Beverage</option>
+                                </select>
+                            </div>
+                            <div style={{ display: 'flex', gap: '10px' }}>
+                                <div className="form-group" style={{ flex: 1 }}>
+                                    <label>Init Stock</label>
+                                    <input type="number" value={newIng.currentStock} onChange={e => setNewIng({ ...newIng, currentStock: Number(e.target.value) })} />
+                                </div>
+                                <div className="form-group" style={{ flex: 1 }}>
+                                    <label>Min Level</label>
+                                    <input type="number" value={newIng.minStockLevel} onChange={e => setNewIng({ ...newIng, minStockLevel: Number(e.target.value) })} />
+                                </div>
+                            </div>
+                            <div className="form-group">
+                                <label>Supplier</label>
+                                <select value={newIng.supplier} onChange={e => setNewIng({ ...newIng, supplier: e.target.value })}>
+                                    <option value="">No Supplier</option>
+                                    {suppliers.map(s => <option key={s._id} value={s._id}>{s.name}</option>)}
+                                </select>
+                            </div>
+                            <div className="modal-actions">
+                                <button type="button" className="action-btn" onClick={() => setShowIngModal(false)}>Cancel</button>
+                                <button type="submit" className="action-btn btn-primary">Save Ingredient</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+
+            {showSupModal && (
+                <div className="modal-overlay">
+                    <div className="modal-content">
+                        <h2>Add New Supplier</h2>
+                        <form onSubmit={handleAddSupplier}>
+                            <div className="form-group">
+                                <label>Supplier Name</label>
+                                <input type="text" required value={newSup.name} onChange={e => setNewSup({ ...newSup, name: e.target.value })} />
+                            </div>
+                            <div className="form-group">
+                                <label>Phone Number</label>
+                                <input type="text" value={newSup.phone} onChange={e => setNewSup({ ...newSup, phone: e.target.value })} />
+                            </div>
+                            <div className="form-group">
+                                <label>Categories (comma separated)</label>
+                                <input type="text" placeholder="Dairy, Meat, Veggies" value={newSup.categories} onChange={e => setNewSup({ ...newSup, categories: e.target.value })} />
+                            </div>
+                            <div className="modal-actions">
+                                <button type="button" className="action-btn" onClick={() => setShowSupModal(false)}>Cancel</button>
+                                <button type="submit" className="action-btn btn-primary">Save Supplier</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
