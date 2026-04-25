@@ -8,6 +8,7 @@ import axios from 'axios';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Haptics from 'expo-haptics';
+import { io } from 'socket.io-client';
 import ItemDetailModal from '../components/ItemDetailModal';
 import Confetti from '../components/Confetti';
 import MembershipCard from '../components/MembershipCard';
@@ -103,6 +104,17 @@ export default function MenuScreen() {
       }
     };
     fetchProfile();
+
+    // 🌐 REAL-TIME MENU SYNC: Listen for updates from the Admin Dashboard
+    const socket = io(API_URL);
+    socket.on('menuUpdated', (data) => {
+      console.log('✨ Live Menu Update Received:', data.type);
+      fetchAll(); // Re-fetch the latest items from the server!
+    });
+
+    return () => {
+      socket.disconnect();
+    };
   }, []);
 
   // ── Filter logic ──────────────────────────────────────────────────────────

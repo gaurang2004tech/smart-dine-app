@@ -29,6 +29,11 @@ router.post('/', verifyToken, async (req, res) => {
     });
 
     const savedItem = await newItem.save();
+
+    // 🌐 LIVE MENU SYNC: Notify all phones that the menu has changed
+    const io = req.app.get('io');
+    if (io) io.emit('menuUpdated', { type: 'added', item: savedItem });
+
     res.status(201).json(savedItem);
   } catch (error) {
     res.status(400).json({ message: error.message });
@@ -47,6 +52,10 @@ router.patch('/:id', verifyToken, async (req, res) => {
     if (!updatedItem) {
       return res.status(404).json({ message: 'Menu item not found' });
     }
+
+    // 🌐 LIVE MENU SYNC: Notify all phones of the update (e.g., stock toggle)
+    const io = req.app.get('io');
+    if (io) io.emit('menuUpdated', { type: 'patched', item: updatedItem });
 
     res.json(updatedItem);
   } catch (error) {

@@ -122,7 +122,7 @@
 }
 
 .supplier-section {
-    background: white;
+    background: rgb(16, 16, 16);
     padding: 24px;
     border-radius: 16px;
     box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
@@ -132,8 +132,8 @@
     padding: 12px;
     margin-bottom: 12px;
     border-radius: 8px;
-    border: 1px solid #f1f5f9;
-    background: #f8fafc;
+    border: 1px solid #f7fafd;
+    background: #eff0f1;
 }
 
 .supplier-card h4 {
@@ -145,7 +145,7 @@
 .supplier-card p {
     margin: 4px 0 0;
     font-size: 12px;
-    color: #64748b;
+    color: #1a1919;
 }
 
 /* Modal Styles */
@@ -155,7 +155,7 @@
     left: 0;
     right: 0;
     bottom: 0;
-    background-color: rgba(0, 0, 0, 0.6);
+    background-color: rgba(24, 23, 23, 0.6);
     display: flex;
     justify-content: center;
     align-items: center;
@@ -163,7 +163,7 @@
 }
 
 .modal-content {
-    background: white;
+    background: rgb(253, 255, 255);
     padding: 30px;
     border-radius: 20px;
     width: 450px;
@@ -175,6 +175,7 @@
     margin-top: 0;
     font-size: 20px;
     margin-bottom: 20px;
+    color: #000000;
 }
 
 .form-group {
@@ -185,7 +186,7 @@
     display: block;
     font-size: 13px;
     font-weight: 600;
-    color: #64748b;
+    color: #000000;
     margin-bottom: 6px;
 }
 

@@ -89,7 +89,7 @@
     display: block;
     font-size: 0.85rem;
     font-weight: 700;
-    color: #000000;
+    color: #000000 !important;
     margin-bottom: 0.5rem;
     text-transform: uppercase;
     letter-spacing: 0.025em;
@@ -100,8 +100,8 @@
     width: 100%;
     padding: 0.8rem 1rem;
     border-radius: 0.75rem;
-    border: 1px solid #0d0d0d;
-    background: #0f0f0f;
+    border: 1px solid #fefbfb;
+    background: #ffffff;
     font-size: 0.95rem;
     color: #000000;
     transition: all 0.2s;
@@ -187,7 +187,7 @@
     font-size: 0.8rem;
     font-weight: 800;
     text-transform: uppercase;
-    color: #94a3b8;
+    color: #000000;
     background: transparent;
 }
 
@@ -262,6 +262,11 @@
 .out-of-stock-row td {
     background: #fdfdfd;
     opacity: 0.8;
+}
+
+.font-semibold {
+    font-weight: 600;
+    color: #000000;
 }
 
 @media (max-width: 1200px) {
