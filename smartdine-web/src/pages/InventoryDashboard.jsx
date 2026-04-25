@@ -41,7 +41,6 @@ const InventoryDashboard = () => {
         e.preventDefault();
         try {
             const token = localStorage.getItem('token');
-            // Clean up supplier if empty
             const payload = { ...newIng };
             if (!payload.supplier) delete payload.supplier;
 
@@ -108,6 +107,8 @@ const InventoryDashboard = () => {
     const lowStockCount = ingredients.filter(i => i.currentStock <= i.minStockLevel).length;
 
     if (loading) return <div className="inventory-container">Loading Asset Records...</div>;
+
+    const units = ['kg', 'g', 'L', 'ml', 'Piece', 'Pack', 'Bottle', 'Box'];
 
     return (
         <div className="inventory-container">
@@ -200,20 +201,28 @@ const InventoryDashboard = () => {
             {showIngModal && (
                 <div className="modal-overlay">
                     <div className="modal-content">
-                        <h2>Add New Ingredient</h2>
+                        <h2 style={{ color: '#000000' }}>Add New Ingredient</h2>
                         <form onSubmit={handleAddIngredient}>
                             <div className="form-group">
                                 <label>Ingredient Name</label>
                                 <input type="text" required value={newIng.name} onChange={e => setNewIng({ ...newIng, name: e.target.value })} />
                             </div>
-                            <div className="form-group">
-                                <label>Category</label>
-                                <select value={newIng.category} onChange={e => setNewIng({ ...newIng, category: e.target.value })}>
-                                    <option>Dry</option>
-                                    <option>Fresh</option>
-                                    <option>Frozen</option>
-                                    <option>Beverage</option>
-                                </select>
+                            <div style={{ display: 'flex', gap: '10px' }}>
+                                <div className="form-group" style={{ flex: 1 }}>
+                                    <label>Category</label>
+                                    <select value={newIng.category} onChange={e => setNewIng({ ...newIng, category: e.target.value })}>
+                                        <option>Dry</option>
+                                        <option>Fresh</option>
+                                        <option>Frozen</option>
+                                        <option>Beverage</option>
+                                    </select>
+                                </div>
+                                <div className="form-group" style={{ flex: 1 }}>
+                                    <label>Unit (kg, L, etc.)</label>
+                                    <select value={newIng.unit} onChange={e => setNewIng({ ...newIng, unit: e.target.value })}>
+                                        {units.map(u => <option key={u} value={u}>{u}</option>)}
+                                    </select>
+                                </div>
                             </div>
                             <div style={{ display: 'flex', gap: '10px' }}>
                                 <div className="form-group" style={{ flex: 1 }}>
@@ -245,15 +254,23 @@ const InventoryDashboard = () => {
             {showEditModal && editingIng && (
                 <div className="modal-overlay">
                     <div className="modal-content">
-                        <h2>Edit Ingredient: {editingIng.name}</h2>
+                        <h2 style={{ color: '#000000' }}>Edit Ingredient: {editingIng.name}</h2>
                         <form onSubmit={handleEditIngredient}>
                             <div className="form-group">
                                 <label>Ingredient Name</label>
                                 <input type="text" required value={editingIng.name} onChange={e => setEditingIng({ ...editingIng, name: e.target.value })} />
                             </div>
-                            <div className="form-group">
-                                <label>Stock Level</label>
-                                <input type="number" required value={editingIng.currentStock} onChange={e => setEditingIng({ ...editingIng, currentStock: Number(e.target.value) })} />
+                            <div style={{ display: 'flex', gap: '10px' }}>
+                                <div className="form-group" style={{ flex: 1 }}>
+                                    <label>Stock Level</label>
+                                    <input type="number" required value={editingIng.currentStock} onChange={e => setEditingIng({ ...editingIng, currentStock: Number(e.target.value) })} />
+                                </div>
+                                <div className="form-group" style={{ flex: 1 }}>
+                                    <label>Unit</label>
+                                    <select value={editingIng.unit} onChange={e => setEditingIng({ ...editingIng, unit: e.target.value })}>
+                                        {units.map(u => <option key={u} value={u}>{u}</option>)}
+                                    </select>
+                                </div>
                             </div>
                             <div className="form-group">
                                 <label>Category</label>
@@ -277,7 +294,7 @@ const InventoryDashboard = () => {
             {showSupModal && (
                 <div className="modal-overlay">
                     <div className="modal-content">
-                        <h2>Add New Supplier</h2>
+                        <h2 style={{ color: '#000000' }}>Add New Supplier</h2>
                         <form onSubmit={handleAddSupplier}>
                             <div className="form-group">
                                 <label>Supplier Name</label>
