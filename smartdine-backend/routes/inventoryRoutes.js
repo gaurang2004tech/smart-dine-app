@@ -19,7 +19,10 @@ router.get('/ingredients', async (req, res) => {
 // POST: Add new ingredient
 router.post('/ingredients', verifyToken, async (req, res) => {
     try {
-        const ingredient = new Ingredient(req.body);
+        const data = { ...req.body };
+        if (data.supplier === "") delete data.supplier; // Handle empty optional field
+
+        const ingredient = new Ingredient(data);
         await ingredient.save();
         res.status(201).json(ingredient);
     } catch (error) {
