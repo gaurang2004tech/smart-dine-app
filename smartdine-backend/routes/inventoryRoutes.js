@@ -30,13 +30,24 @@ router.post('/ingredients', verifyToken, async (req, res) => {
     }
 });
 
-// PATCH: Update stock levels
+// PATCH: Update ingredient
 router.patch('/ingredients/:id', verifyToken, async (req, res) => {
     try {
         const ingredient = await Ingredient.findByIdAndUpdate(req.params.id, req.body, { new: true });
         res.json(ingredient);
     } catch (error) {
         res.status(400).json({ message: error.message });
+    }
+});
+
+// DELETE: Remove ingredient
+router.delete('/ingredients/:id', verifyToken, async (req, res) => {
+    try {
+        const result = await Ingredient.findByIdAndDelete(req.params.id);
+        if (!result) return res.status(404).json({ message: 'Ingredient not found' });
+        res.json({ message: 'Ingredient deleted' });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
     }
 });
 

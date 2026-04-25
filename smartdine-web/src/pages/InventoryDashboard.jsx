@@ -9,9 +9,12 @@ const InventoryDashboard = () => {
 
     // Modal & Form States
     const [showIngModal, setShowIngModal] = useState(false);
+    const [showEditModal, setShowEditModal] = useState(false);
     const [showSupModal, setShowSupModal] = useState(false);
+
     const [newIng, setNewIng] = useState({ name: '', category: 'Dry', unit: 'kg', currentStock: 0, minStockLevel: 5, supplier: '' });
-    const [newSup, setNewSup] = useState({ name: '', phone: '', categories: [] });
+    const [editingIng, setEditingIng] = useState(null);
+    const [newSup, setNewSup] = useState({ name: '', phone: '', categories: '' });
 
     const API_URL = "https://smartdine-backend-ao8c.onrender.com/api/inventory";
 
@@ -38,14 +41,49 @@ const InventoryDashboard = () => {
         e.preventDefault();
         try {
             const token = localStorage.getItem('token');
-            await axios.post(`${API_URL}/ingredients`, newIng, {
+            // Clean up supplier if empty
+            const payload = { ...newIng };
+            if (!payload.supplier) delete payload.supplier;
+
+            await axios.post(`${API_URL}/ingredients`, payload, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setShowIngModal(false);
             setNewIng({ name: '', category: 'Dry', unit: 'kg', currentStock: 0, minStockLevel: 5, supplier: '' });
             fetchData();
         } catch (err) {
-            alert("Failed to add ingredient. Ensure you are logged in.");
+            alert("Failed to add ingredient.");
+        }
+    };
+
+    const handleEditIngredient = async (e) => {
+        e.preventDefault();
+        try {
+            const token = localStorage.getItem('token');
+            const payload = { ...editingIng };
+            if (!payload.supplier) payload.supplier = null;
+
+            await axios.patch(`${API_URL}/ingredients/${editingIng._id}`, payload, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            setShowEditModal(false);
+            setEditingIng(null);
+            fetchData();
+        } catch (err) {
+            alert("Failed to update ingredient.");
+        }
+    };
+
+    const handleDeleteIngredient = async (id) => {
+        if (!window.confirm("Are you sure you want to delete this ingredient?")) return;
+        try {
+            const token = localStorage.getItem('token');
+            await axios.delete(`${API_URL}/ingredients/${id}`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            fetchData();
+        } catch (err) {
+            alert("Failed to delete ingredient.");
         }
     };
 
@@ -53,7 +91,10 @@ const InventoryDashboard = () => {
         e.preventDefault();
         try {
             const token = localStorage.getItem('token');
-            await axios.post(`${API_URL}/suppliers`, { ...newSup, categories: newSup.categories.split(',').map(s => s.trim()) }, {
+            await axios.post(`${API_URL}/suppliers`, {
+                ...newSup,
+                categories: typeof newSup.categories === 'string' ? newSup.categories.split(',').map(s => s.trim()) : newSup.categories
+            }, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setShowSupModal(false);
@@ -100,7 +141,7 @@ const InventoryDashboard = () => {
                             <tr>
                                 <th>Ingredient</th>
                                 <th>Category</th>
-                                <th>Current Stock</th>
+                                <th>Stock</th>
                                 <th>Unit</th>
                                 <th>Status</th>
                                 <th>Actions</th>
@@ -119,7 +160,22 @@ const InventoryDashboard = () => {
                                         </span>
                                     </td>
                                     <td>
-                                        <button className="action-btn" style={{ background: '#f1f5f9', color: '#475569' }}>Edit</button>
+                                        <div style={{ display: 'flex', gap: '5px' }}>
+                                            <button
+                                                className="action-btn"
+                                                style={{ background: '#f1f5f9', color: '#475569' }}
+                                                onClick={() => { setEditingIng(item); setShowEditModal(true); }}
+                                            >
+                                                Edit
+                                            </button>
+                                            <button
+                                                className="action-btn"
+                                                style={{ background: '#FEE2E2', color: '#991B1B' }}
+                                                onClick={() => handleDeleteIngredient(item._id)}
+                                            >
+                                                🗑️
+                                            </button>
+                                        </div>
                                     </td>
                                 </tr>
                             ))}
@@ -140,8 +196,7 @@ const InventoryDashboard = () => {
                 </div>
             </div>
 
-            {/* --- Modals --- */}
-
+            {/* --- Add Ingredient Modal --- */}
             {showIngModal && (
                 <div className="modal-overlay">
                     <div className="modal-content">
@@ -186,6 +241,39 @@ const InventoryDashboard = () => {
                 </div>
             )}
 
+            {/* --- Edit Ingredient Modal --- */}
+            {showEditModal && editingIng && (
+                <div className="modal-overlay">
+                    <div className="modal-content">
+                        <h2>Edit Ingredient: {editingIng.name}</h2>
+                        <form onSubmit={handleEditIngredient}>
+                            <div className="form-group">
+                                <label>Ingredient Name</label>
+                                <input type="text" required value={editingIng.name} onChange={e => setEditingIng({ ...editingIng, name: e.target.value })} />
+                            </div>
+                            <div className="form-group">
+                                <label>Stock Level</label>
+                                <input type="number" required value={editingIng.currentStock} onChange={e => setEditingIng({ ...editingIng, currentStock: Number(e.target.value) })} />
+                            </div>
+                            <div className="form-group">
+                                <label>Category</label>
+                                <select value={editingIng.category} onChange={e => setEditingIng({ ...editingIng, category: e.target.value })}>
+                                    <option>Dry</option>
+                                    <option>Fresh</option>
+                                    <option>Frozen</option>
+                                    <option>Beverage</option>
+                                </select>
+                            </div>
+                            <div className="modal-actions">
+                                <button type="button" className="action-btn" onClick={() => { setShowEditModal(false); setEditingIng(null); }}>Cancel</button>
+                                <button type="submit" className="action-btn btn-primary">Update Details</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+
+            {/* --- Add Supplier Modal --- */}
             {showSupModal && (
                 <div className="modal-overlay">
                     <div className="modal-content">
