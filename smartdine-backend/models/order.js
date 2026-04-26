@@ -24,6 +24,7 @@ const orderSchema = new mongoose.Schema({
     enum: ['Cash', 'Card', 'Wallet'],
     default: 'Cash'
   },
+  isPaid: { type: Boolean, default: false },
   createdAt: { type: Date, default: Date.now }
 });
 
