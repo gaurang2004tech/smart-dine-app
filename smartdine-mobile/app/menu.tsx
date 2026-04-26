@@ -48,7 +48,6 @@ export default function MenuScreen() {
           setTableNumber(saved);
         } else {
           // 🛡️ NO TABLE IDENTIFIED -> Redirect back to scanner!
-          // This prevents landing on the menu accidentally.
           router.replace('/');
         }
       }
@@ -56,21 +55,31 @@ export default function MenuScreen() {
     resolveTable();
   }, [tableId]);
 
+  const fetchProfile = async () => {
+    try {
+      const res = await axios.get(`${API_URL}/api/users/9999999999`);
+      setUser(res.data);
+    } catch (err) {
+      console.error('Profile fetch failed', err);
+    }
+  };
+
+  const fetchAll = async () => {
+    try {
+      const [menuRes, ratingsRes] = await Promise.all([
+        axios.get(`${API_URL}/api/menu`),
+        axios.get(`${API_URL}/api/ratings`),
+      ]);
+      setMenuItems(menuRes.data);
+      setRatings(ratingsRes.data);
+    } catch (error) {
+      console.error('Failed to fetch menu/ratings', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const fetchAll = async () => {
-      try {
-        const [menuRes, ratingsRes] = await Promise.all([
-          axios.get(`${API_URL}/api/menu`),
-          axios.get(`${API_URL}/api/ratings`),
-        ]);
-        setMenuItems(menuRes.data);
-        setRatings(ratingsRes.data);
-      } catch (error) {
-        console.error('Failed to fetch menu/ratings', error);
-      } finally {
-        setLoading(false);
-      }
-    };
     // Check if there's a saved orderId AND it's still an active (unpaid) order
     const checkActiveOrder = async () => {
       const saved = await AsyncStorage.getItem('activeOrderId');
@@ -83,33 +92,21 @@ export default function MenuScreen() {
         if (isActive) {
           setActiveOrderId(saved);
         } else {
-          // Order is paid or unknown — clear it so banner never shows again
           await AsyncStorage.removeItem('activeOrderId');
         }
       } catch {
-        // Order not found on server — clear stale ID
         await AsyncStorage.removeItem('activeOrderId');
       }
     };
     fetchAll();
     checkActiveOrder();
-
-    // 🆕 Fetch Loyalty Profile (Using dummy phone for demo)
-    const fetchProfile = async () => {
-      try {
-        const res = await axios.get(`${API_URL}/api/users/9999999999`);
-        setUser(res.data);
-      } catch (err) {
-        console.error('Profile fetch failed', err);
-      }
-    };
     fetchProfile();
 
-    // 🌐 REAL-TIME MENU SYNC: Listen for updates from the Admin Dashboard
+    // 🌐 REAL-TIME MENU SYNC
     const socket = io(API_URL);
     socket.on('menuUpdated', (data) => {
       console.log('✨ Live Menu Update Received:', data.type);
-      fetchAll(); // Re-fetch the latest items from the server!
+      fetchAll();
     });
 
     return () => {
@@ -147,8 +144,16 @@ export default function MenuScreen() {
 
   const getItemCount = (itemId: string) => cart.filter(c => c._id === itemId).length;
 
-  const placeOrder = async () => {
+  const placeOrder = async (method: string = 'Cash') => {
     if (cart.length === 0) return;
+    const total = cart.reduce((sum, item) => sum + (item.price || 0), 0);
+
+    // 💳 WALLET CHECK
+    if (method === 'Wallet' && (user?.walletBalance || 0) < total) {
+      Alert.alert("Insufficient Balance", "Please add funds to your wallet to continue.");
+      return;
+    }
+
     try {
       const orderItems = cart.map(item => ({
         menuItem: item._id,
@@ -156,23 +161,42 @@ export default function MenuScreen() {
         instructions: item.instructions || ''
       }));
       const res = await axios.post(`${API_URL}/api/orders`, {
-        tableNumber, // 🌟 uses state resolved from QR param or AsyncStorage
+        tableNumber,
         customerPhone: user?.phoneNumber || '9999999999',
         items: orderItems,
-        totalAmount: cart.reduce((sum, item) => sum + (item.price || 0), 0)
+        totalAmount: total,
+        paymentMethod: method
       });
+
+      // If wallet used, mark as PAID instantly
+      if (method === 'Wallet') {
+        await axios.patch(`${API_URL}/api/orders/${res.data._id}/pay`, { paymentMethod: 'Wallet' });
+      }
+
       await AsyncStorage.setItem('activeOrderId', res.data._id);
       setCart([]);
-      // 🎊 Fire confetti before navigating!
       confettiRef.current?.fire();
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       setTimeout(() => {
         router.push({ pathname: '/tracking', params: { orderId: res.data._id } });
       }, 1000);
+      fetchProfile(); // Update balance
     } catch (error) {
       console.error(error);
       alert('Failed to place order.');
     }
+  };
+
+  const showCheckoutAlert = () => {
+    Alert.alert(
+      "Secure Checkout",
+      "Choose your preferred payment method:",
+      [
+        { text: "SmartDine Wallet 💳", onPress: () => placeOrder('Wallet') },
+        { text: "Pay at counter (Cash)", onPress: () => placeOrder('Cash') },
+        { text: "Cancel", style: "cancel" }
+      ]
+    );
   };
 
   // ── Star renderer ─────────────────────────────────────────────────────────
@@ -193,7 +217,7 @@ export default function MenuScreen() {
   const handleClaimGift = async () => {
     try {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
-      confettiRef.current?.fire(); // 🎊 Celebratory reset!
+      confettiRef.current?.fire();
       const res = await axios.post(`${API_URL}/api/users/9999999999/claim-gift`);
       setUser(res.data.customer);
       alert("Gift Claimed! 🎁 Our team is preparing your gourmet reward right now.");
@@ -203,13 +227,12 @@ export default function MenuScreen() {
     }
   };
 
-  // 🆕 Helper to boost profile for testing purposes
   const boostProfile = async () => {
     try {
       await axios.post(`${API_URL}/api/users/9999999999/reward`, { pointsToAdd: 2100 });
       const res = await axios.get(`${API_URL}/api/users/9999999999`);
       setUser(res.data);
-      alert("🚀 Profile Boosted! You are now a Black Card Member with 1 Gift.");
+      alert("🚀 Profile Boosted! You are now a Black Card Member.");
     } catch (err) {
       console.error(err);
     }
@@ -229,19 +252,22 @@ export default function MenuScreen() {
   if (loading) {
     return (
       <View style={styles.center}>
-        <ActivityIndicator size="large" color="#1A1A1A" />
+        <ActivityIndicator size="large" color="#6C5CE7" />
       </View>
     );
   }
 
   return (
     <SafeAreaView style={styles.container}>
-
-      {/* ── HEADER ── */}
-      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingRight: 20 }}>
-        <Text style={styles.headerTitle}>Our Menu</Text>
-        <TouchableOpacity onPress={boostProfile}>
-          <Text style={{ fontSize: 10, color: '#CBD5E0', fontWeight: '800' }}>[ TEST ELITE ]</Text>
+      {/* ── TOP NAV ── */}
+      <View style={styles.topHeader}>
+        <View>
+          <Text style={styles.headerTitle}>Our Menu</Text>
+          <Text style={styles.tableTag}>📍 {tableNumber}</Text>
+        </View>
+        <TouchableOpacity style={styles.walletHeader} onPress={() => router.push('/wallet')}>
+          <Text style={styles.walletLabel}>WALLET</Text>
+          <Text style={styles.walletAmt}>₹{user?.walletBalance || 0}</Text>
         </TouchableOpacity>
       </View>
 
@@ -254,14 +280,12 @@ export default function MenuScreen() {
           placeholderTextColor="#9CA3AF"
           value={searchQuery}
           onChangeText={setSearchQuery}
-          clearButtonMode="while-editing"
         />
       </View>
 
-      {/* ── CATEGORY FILTER BAR ── */}
+      {/* ── CATEGORY FILTER ── */}
       <View style={styles.filterContainer}>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterScroll}>
-          {/* Veg Only Toggle */}
           <TouchableOpacity
             style={[styles.filterPill, isVegOnly && { backgroundColor: '#2E7D32', borderColor: '#2E7D32' }]}
             onPress={() => setIsVegOnly(!isVegOnly)}
@@ -287,14 +311,12 @@ export default function MenuScreen() {
 
       {/* ── MENU ITEMS ── */}
       <ScrollView contentContainerStyle={styles.menuList}>
-
-        {/* 🆕 ELITE LOYALTY CARD */}
         {user && <MembershipCard user={user} onClaim={handleClaimGift} />}
 
         {displayedItems.length === 0 && (
           <View style={styles.emptyState}>
             <Text style={styles.emptyEmoji}>🍽️</Text>
-            <Text style={styles.emptyText}>No dishes found for "{searchQuery}"</Text>
+            <Text style={styles.emptyText}>No dishes found</Text>
           </View>
         )}
 
@@ -311,62 +333,36 @@ export default function MenuScreen() {
               activeOpacity={0.92}
               onPress={() => setSelectedItem(item)}
             >
-              {/* Food image */}
               {hasImage && (
                 <View>
-                  <MenuImage
-                    uri={item.image}
-                    style={[styles.foodImage, isCellar && styles.cellarImage]}
-                    resizeMode="cover"
-                  />
+                  <MenuImage uri={item.image} style={[styles.foodImage, isCellar && styles.cellarImage]} />
                   {isCellar && (
-                    <View style={styles.cellarBadge}>
-                      <Text style={styles.cellarBadgeText}>EXCLUSIVE</Text>
-                    </View>
+                    <View style={styles.cellarBadge}><Text style={styles.cellarBadgeText}>EXCLUSIVE</Text></View>
                   )}
                 </View>
               )}
 
-              {/* Info + actions row */}
               <View style={styles.cardBody}>
                 <View style={styles.cardInfo}>
-                  <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 2 }}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                     <Text style={[styles.itemName, isCellar && styles.cellarItemName]}>
                       {item.isSpicy && <Text style={{ color: '#FF0000' }}>🌶️ </Text>}
                       {item.name}
                     </Text>
-                    {!isCellar && (
-                      <>
-                        {item.dietaryType === 'Veg' && <Text style={{ marginLeft: 6, fontSize: 10 }}>🟢</Text>}
-                        {item.dietaryType === 'Non-Veg' && <Text style={{ marginLeft: 6, fontSize: 10 }}>🔴</Text>}
-                      </>
-                    )}
                   </View>
-
-                  {isCellar && (
-                    <Text style={styles.cellarOrigin}>{item.vintage} • {item.origin}</Text>
-                  )}
-
-                  {/* Star rating */}
                   {!isCellar && itemRating && renderStars(itemRating.average, itemRating.count)}
-
                   <Text style={[styles.itemPrice, isCellar && styles.cellarPrice]}>₹{item.price}</Text>
                 </View>
 
-                {/* Add / Count controls — stopPropagation prevents modal opening */}
                 {item.inStock ? (
                   count > 0 ? (
                     <View style={styles.quantityControl}>
-                      <TouchableOpacity style={styles.qtyButton} onPress={(e) => { e.stopPropagation?.(); removeFromCart(item); }}>
-                        <Text style={styles.qtyText}>−</Text>
-                      </TouchableOpacity>
+                      <TouchableOpacity style={styles.qtyButton} onPress={() => removeFromCart(item)}><Text style={styles.qtyText}>−</Text></TouchableOpacity>
                       <Text style={styles.qtyCount}>{count}</Text>
-                      <TouchableOpacity style={styles.qtyButton} onPress={(e) => { e.stopPropagation?.(); addToCart(item); }}>
-                        <Text style={styles.qtyText}>+</Text>
-                      </TouchableOpacity>
+                      <TouchableOpacity style={styles.qtyButton} onPress={() => addToCart(item)}><Text style={styles.qtyText}>+</Text></TouchableOpacity>
                     </View>
                   ) : (
-                    <TouchableOpacity style={[styles.addButton, isCellar && styles.cellarAddButton]} onPress={(e) => { e.stopPropagation?.(); addToCart(item); }}>
+                    <TouchableOpacity style={[styles.addButton, isCellar && styles.cellarAddButton]} onPress={() => addToCart(item)}>
                       <Text style={[styles.addButtonText, isCellar && styles.cellarAddText]}>ADD</Text>
                     </TouchableOpacity>
                   )
@@ -374,62 +370,34 @@ export default function MenuScreen() {
                   <Text style={styles.outOfStock}>Out of Stock</Text>
                 )}
               </View>
-
             </TouchableOpacity>
           );
         })}
       </ScrollView>
 
-      {/* ── FLOATING CART BAR ── */}
+      {/* ── CART BAR ── */}
       {cart.length > 0 && (
-        <TouchableOpacity style={styles.bottomCartBar} activeOpacity={0.94} onPress={placeOrder}>
+        <TouchableOpacity style={styles.bottomCartBar} activeOpacity={0.94} onPress={showCheckoutAlert}>
           <BlurView intensity={80} tint="dark" style={StyleSheet.absoluteFill} />
           <View style={{ flex: 1 }}>
-            <Text style={styles.cartItemCount}>{cart.length} ITEM(S) IN CART</Text>
-            <Text style={styles.cartTotal}>
-              Total: ₹{cart.reduce((sum, item) => sum + (item.price || 0), 0)}
-            </Text>
+            <Text style={styles.cartItemCount}>{cart.length} ITEM(S)</Text>
+            <Text style={styles.cartTotal}>Total: ₹{cart.reduce((sum, item) => sum + (item.price || 0), 0)}</Text>
           </View>
-          <View style={styles.placeOrderButton}>
-            <Text style={styles.placeOrderText}>Checkout ➔</Text>
-          </View>
+          <View style={styles.placeOrderButton}><Text style={styles.placeOrderText}>Checkout ➔</Text></View>
         </TouchableOpacity>
       )}
-      {/* ── TRACK MY ORDER BANNER ── */}
+
+      {/* ── TRACKING BANNER ── */}
       {activeOrderId && cart.length === 0 && (
-        <TouchableOpacity
-          style={styles.trackOrderBar}
-          activeOpacity={0.9}
-          onPress={() => router.push({ pathname: '/tracking', params: { orderId: activeOrderId } })}
-        >
+        <TouchableOpacity style={styles.trackOrderBar} onPress={() => router.push({ pathname: '/tracking', params: { orderId: activeOrderId } })}>
           <BlurView intensity={80} tint="dark" style={StyleSheet.absoluteFill} />
           <Text style={styles.trackOrderEmoji}>🛵</Text>
-          <View>
-            <Text style={styles.trackOrderTitle}>Your order is being prepared!</Text>
-            <Text style={styles.trackOrderSub}>Tap to track your order live</Text>
-          </View>
+          <View><Text style={styles.trackOrderTitle}>Order being prepared!</Text></View>
           <Text style={styles.trackOrderArrow}>→</Text>
         </TouchableOpacity>
       )}
 
-      {/* ── ITEM DETAIL MODAL ── */}
-      <ItemDetailModal
-        item={selectedItem}
-        rating={selectedItem ? ratings[selectedItem._id] : undefined}
-        visible={!!selectedItem}
-        onClose={() => setSelectedItem(null)}
-        onAdd={addToCart}
-        onRemove={removeFromCart}
-        count={getItemCount}
-      />
-
-      {/* ── CALL WAITER FAB ── */}
-      <TouchableOpacity style={styles.callWaiterFab} onPress={callWaiter}>
-        <BlurView intensity={70} tint="light" style={StyleSheet.absoluteFill} />
-        <Text style={{ fontSize: 24 }}>🛎️</Text>
-      </TouchableOpacity>
-
-      {/* ── CONFETTI (absolute overlay, fires on order placed) ── */}
+      <TouchableOpacity style={styles.callWaiterFab} onPress={callWaiter}><Text style={{ fontSize: 24 }}>🛎️</Text></TouchableOpacity>
       <Confetti ref={confettiRef} />
     </SafeAreaView>
   );
@@ -438,67 +406,34 @@ export default function MenuScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F9F9F9' },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  headerTitle: { fontSize: 32, fontWeight: '800', color: '#1A1A1A', paddingHorizontal: 20, paddingTop: 20, paddingBottom: 10 },
-
-  // Search
-  searchContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginHorizontal: 20,
-    marginBottom: 12,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 14,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
-    borderWidth: 1,
-    borderColor: '#F0F0F5',
-  },
+  topHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingTop: 20, marginBottom: 10 },
+  headerTitle: { fontSize: 32, fontWeight: '800', color: '#1A1A1A' },
+  tableTag: { fontSize: 12, color: '#666', fontWeight: '600', marginTop: -5 },
+  walletHeader: { backgroundColor: '#FFF', paddingVertical: 8, paddingHorizontal: 12, borderRadius: 12, borderWidth: 1, borderColor: '#E5E7EB', alignItems: 'center' },
+  walletLabel: { fontSize: 8, fontWeight: '900', color: '#94A3B8' },
+  walletAmt: { fontSize: 16, fontWeight: '900', color: '#6C5CE7' },
+  searchContainer: { flexDirection: 'row', alignItems: 'center', marginHorizontal: 20, marginBottom: 12, backgroundColor: '#FFFFFF', borderRadius: 14, paddingHorizontal: 14, paddingVertical: 10, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 8, elevation: 2, borderWidth: 1, borderColor: '#F0F0F5' },
   searchIcon: { fontSize: 16, marginRight: 8, opacity: 0.5 },
   searchInput: { flex: 1, fontSize: 16, color: '#1A1A1A', fontWeight: '500' },
-
-  // Category filters
   filterContainer: { paddingBottom: 12 },
   filterScroll: { paddingHorizontal: 20, gap: 10 },
   filterPill: { paddingVertical: 8, paddingHorizontal: 20, backgroundColor: 'rgba(0,0,0,0.05)', borderRadius: 20, borderWidth: 1, borderColor: 'rgba(0,0,0,0.1)' },
   filterPillActive: { backgroundColor: '#1A1A1A', borderColor: '#1A1A1A' },
   filterText: { fontSize: 15, fontWeight: '600', color: '#666' },
   filterTextActive: { color: '#FFF' },
-
-  // Empty state
   emptyState: { alignItems: 'center', paddingVertical: 60 },
   emptyEmoji: { fontSize: 48, marginBottom: 12 },
   emptyText: { fontSize: 16, color: '#9CA3AF', fontWeight: '500' },
-
-  // Menu card
   menuList: { paddingHorizontal: 20, paddingBottom: 120 },
-  menuCard: {
-    backgroundColor: '#FFF',
-    borderRadius: 16,
-    marginBottom: 15,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.06,
-    shadowRadius: 12,
-    elevation: 2,
-    overflow: 'hidden',
-  },
+  menuCard: { backgroundColor: '#FFF', borderRadius: 16, marginBottom: 15, shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 12, elevation: 2, overflow: 'hidden' },
   foodImage: { width: '100%', height: 160 },
   cardBody: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 16 },
   cardInfo: { flex: 1, marginRight: 12 },
   itemName: { fontSize: 17, fontWeight: '700', color: '#1A1A1A', marginBottom: 4 },
   itemPrice: { fontSize: 16, fontWeight: '700', color: '#2E7D32', marginTop: 4 },
-
-  // Stars
   starsRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 2 },
   starsFilled: { fontSize: 13, color: '#F59E0B', letterSpacing: 1 },
   starsCount: { fontSize: 11, color: '#9CA3AF', fontWeight: '600' },
-
-  // Add button & counter
   addButton: { backgroundColor: '#1A1A1A', paddingVertical: 8, paddingHorizontal: 18, borderRadius: 10 },
   addButtonText: { color: '#FFF', fontWeight: '700', fontSize: 14 },
   outOfStock: { color: '#E65100', fontWeight: '700' },
@@ -506,126 +441,22 @@ const styles = StyleSheet.create({
   qtyButton: { paddingVertical: 6, paddingHorizontal: 14, backgroundColor: '#F5F5F5' },
   qtyText: { fontSize: 18, fontWeight: '800', color: '#1A1A1A' },
   qtyCount: { fontSize: 16, fontWeight: '800', color: '#1A1A1A', minWidth: 26, textAlign: 'center' },
-
-  // Cart bar
-  bottomCartBar: {
-    position: 'absolute',
-    bottom: 30,
-    left: 20,
-    right: 20,
-    backgroundColor: 'rgba(0,0,0,0.6)',
-    padding: 20,
-    borderRadius: 20,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.3,
-    shadowRadius: 15,
-    elevation: 999,
-    zIndex: 999,
-    overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.2)',
-  },
+  bottomCartBar: { position: 'absolute', bottom: 30, left: 20, right: 20, backgroundColor: 'rgba(0,0,0,0.6)', padding: 20, borderRadius: 20, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', shadowColor: '#000', shadowOpacity: 0.3, shadowRadius: 15, elevation: 999, zIndex: 999, overflow: 'hidden', borderWidth: 1, borderColor: 'rgba(255,255,255,0.2)' },
   cartItemCount: { color: '#A0AEC0', fontSize: 12, fontWeight: '700', letterSpacing: 1, marginBottom: 2 },
   cartTotal: { color: '#FFFFFF', fontSize: 22, fontWeight: '800' },
   placeOrderButton: { backgroundColor: '#FFFFFF', paddingVertical: 12, paddingHorizontal: 20, borderRadius: 12 },
   placeOrderText: { color: '#1A1A1A', fontSize: 16, fontWeight: '800' },
-
-  // Track My Order banner
-  trackOrderBar: {
-    position: 'absolute',
-    bottom: 30,
-    left: 20,
-    right: 20,
-    backgroundColor: 'rgba(108,92,231,0.6)', // Semi-transparent Purple
-    padding: 16,
-    borderRadius: 20,
-    flexDirection: 'row',
-    alignItems: 'center',
-    shadowColor: '#6C5CE7',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.4,
-    shadowRadius: 15,
-    elevation: 999,
-    zIndex: 999,
-    overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.3)',
-  },
+  trackOrderBar: { position: 'absolute', bottom: 30, left: 20, right: 20, backgroundColor: 'rgba(108,92,231,0.6)', padding: 16, borderRadius: 20, flexDirection: 'row', alignItems: 'center', shadowColor: '#6C5CE7', shadowOpacity: 0.4, shadowRadius: 15, elevation: 999, zIndex: 999, overflow: 'hidden', borderWidth: 1, borderColor: 'rgba(255,255,255,0.3)' },
   trackOrderEmoji: { fontSize: 26, marginRight: 12 },
   trackOrderTitle: { fontSize: 14, fontWeight: '800', color: '#FFF' },
-  trackOrderSub: { fontSize: 12, color: 'rgba(255,255,255,0.75)', marginTop: 2 },
-  trackOrderArrow: { fontSize: 20, color: '#FFF', marginLeft: 'auto', fontWeight: '800' },
-
-  // Call Waiter FAB
-  callWaiterFab: {
-    position: 'absolute',
-    bottom: 30,
-    right: 30,
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: 'rgba(255,255,255,0.6)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 10,
-    elevation: 10,
-    zIndex: 998,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.8)',
-    overflow: 'hidden',
-  },
-  // --- Luxe Cellar Styles ---
-  cellarCard: {
-    backgroundColor: '#0F172A', // Deep navy
-    borderColor: 'rgba(212, 175, 55, 0.3)', // Soft Gold
-    borderWidth: 1,
-  },
-  cellarImage: {
-    opacity: 0.9,
-  },
-  cellarBadge: {
-    position: 'absolute',
-    top: 10,
-    left: 10,
-    backgroundColor: '#D4AF37', // Gold
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 4,
-  },
-  cellarBadgeText: {
-    color: '#1A1A1A',
-    fontSize: 8,
-    fontWeight: '900',
-    letterSpacing: 1,
-  },
-  cellarItemName: {
-    color: '#F1F5F9', // Crisp white
-    fontFamily: 'serif',
-    fontSize: 18,
-  },
-  cellarOrigin: {
-    color: '#94A3B8',
-    fontSize: 11,
-    fontStyle: 'italic',
-    marginBottom: 4,
-  },
-  cellarPrice: {
-    color: '#D4AF37', // Gold price
-    fontWeight: '700',
-  },
-  cellarAddButton: {
-    backgroundColor: 'transparent',
-    borderColor: '#D4AF37',
-    borderWidth: 1.5,
-  },
-  cellarAddText: {
-    color: '#D4AF37',
-  }
+  trackOrderArrow: { fontSize: 20, color: '#FFF', marginLeft: 'auto' },
+  callWaiterFab: { position: 'absolute', bottom: 30, right: 30, width: 60, height: 60, borderRadius: 30, backgroundColor: 'rgba(255,255,255,0.6)', justifyContent: 'center', alignItems: 'center', shadowColor: '#000', shadowOpacity: 0.2, shadowRadius: 10, elevation: 10, zIndex: 998, borderWidth: 1, borderColor: 'rgba(255,255,255,0.8)' },
+  cellarCard: { backgroundColor: '#0F172A', borderColor: 'rgba(212, 175, 55, 0.3)', borderWidth: 1 },
+  cellarImage: { opacity: 0.9 },
+  cellarBadge: { position: 'absolute', top: 10, left: 10, backgroundColor: '#D4AF37', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 4 },
+  cellarBadgeText: { color: '#1A1A1A', fontSize: 8, fontWeight: '900', letterSpacing: 1 },
+  cellarItemName: { color: '#F1F5F9', fontFamily: 'serif', fontSize: 18 },
+  cellarPrice: { color: '#D4AF37', fontWeight: '700' },
+  cellarAddButton: { backgroundColor: 'transparent', borderColor: '#D4AF37', borderWidth: 1.5 },
+  cellarAddText: { color: '#D4AF37' }
 });

@@ -12,7 +12,16 @@ const customerSchema = new mongoose.Schema({
     rewardProgress: { type: Number, default: 0 }, // 🆕 Tracking 0-1000 points for Black Card gifts
     unclaimedGifts: { type: Number, default: 0 }, // 🆕 Number of ready-to-claim gifts
 
-    memberSince: { type: Date, default: Date.now }
+    memberSince: { type: Date, default: Date.now },
+
+    // 💳 Digital Wallet Fields
+    walletBalance: { type: Number, default: 0 },
+    transactions: [{
+        type: { type: String, enum: ['Credit', 'Debit'] },
+        amount: Number,
+        reason: String,
+        timestamp: { type: Date, default: Date.now }
+    }]
 });
 
 customerSchema.methods.awardPoints = async function (amount) {

@@ -11,6 +11,7 @@ const verifyToken = require('./middleware/auth');
 const aiRoutes = require('./routes/aiRoutes');
 const userRoutes = require('./routes/userRoutes');
 const inventoryRoutes = require('./routes/inventoryRoutes');
+const walletRoutes = require('./routes/walletRoutes');
 
 const app = express();
 const server = http.createServer(app);
@@ -49,6 +50,7 @@ app.use('/api/ratings', require('./routes/ratingRoutes'));
 app.use('/api/users', userRoutes);
 app.use('/api/reservations', require('./routes/reservationRoutes'));
 app.use('/api/inventory', inventoryRoutes);
+app.use('/api/wallet', walletRoutes);
 
 // 🛎️ SERVICE CALLS (Call Waiter)
 app.post('/api/notifications/call-waiter', (req, res) => {

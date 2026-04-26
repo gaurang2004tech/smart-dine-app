@@ -30,7 +30,7 @@ router.post('/', verifyToken, async (req, res) => {
 
     const savedItem = await newItem.save();
 
-    // 🌐 LIVE MENU SYNC: Notify all phones that the menu has changed
+    //  LIVE MENU SYNC: Notify all phones that the menu has changed
     const io = req.app.get('io');
     if (io) io.emit('menuUpdated', { type: 'added', item: savedItem });
 

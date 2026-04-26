@@ -130,14 +130,29 @@ router.patch('/table/:tableNumber/pay', async (req, res) => {
     const orders = await Order.find({ tableNumber: req.params.tableNumber, status: { $nin: ['paid', 'cancelled'] } }).populate('items.menuItem');
 
     for (const order of orders) {
-      // Calculate total if not set
       const total = order.items.reduce((sum, i) => sum + (i.menuItem?.price || 0) * (i.quantity || 1), 0);
+
+      // 💳 WALLET DEDUCTION (Table-wide)
+      if (req.body.paymentMethod === 'Wallet') {
+        const customer = await Customer.findOne({ phoneNumber: order.customerPhone });
+        if (customer && customer.walletBalance >= total) {
+          customer.walletBalance -= total;
+          customer.transactions.unshift({
+            type: 'Debit',
+            amount: total,
+            reason: `Order at Table ${order.tableNumber}`,
+            timestamp: new Date()
+          });
+          await customer.save();
+        }
+      }
+
       await rewardPoints(order.customerPhone, total);
     }
 
     const result = await Order.updateMany(
       { tableNumber: req.params.tableNumber, status: { $nin: ['paid', 'cancelled'] } },
-      { status: 'paid' }
+      { status: 'paid', paymentMethod: req.body.paymentMethod || 'Cash' }
     );
 
     const io = req.app.get('io');
@@ -160,11 +175,28 @@ router.patch('/:id/pay', async (req, res) => {
       return res.status(404).json({ message: 'Order not found' });
     }
 
+    // 💳 WALLET DEDUCTION (Single Order)
+    const total = updatedOrder.items.reduce((sum, i) => sum + (i.menuItem?.price || 0) * (i.quantity || 1), 0);
+    if (req.body.paymentMethod === 'Wallet') {
+      const customer = await Customer.findOne({ phoneNumber: updatedOrder.customerPhone });
+      if (!customer || customer.walletBalance < total) {
+        return res.status(400).json({ message: 'Insufficient wallet balance' });
+      }
+      customer.walletBalance -= total;
+      customer.transactions.unshift({
+        type: 'Debit',
+        amount: total,
+        reason: `Payment for Order ${updatedOrder._id}`,
+        timestamp: new Date()
+      });
+      await customer.save();
+    }
+
     updatedOrder.status = 'paid';
+    updatedOrder.paymentMethod = req.body.paymentMethod || 'Cash';
     await updatedOrder.save();
 
     // Reward points
-    const total = updatedOrder.items.reduce((sum, i) => sum + (i.menuItem?.price || 0) * (i.quantity || 1), 0);
     await rewardPoints(updatedOrder.customerPhone, total);
 
     const io = req.app.get('io');
