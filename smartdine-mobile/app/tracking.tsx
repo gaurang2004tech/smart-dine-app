@@ -55,9 +55,11 @@ export default function TrackingScreen() {
       setSplitModalVisible(true);
     } catch (error: any) {
       console.error(error);
-      const msg = error.response?.data?.message || 'Failed to fetch table orders.';
-      const stack = error.response?.data?.location || '';
-      alert(`${msg} ${stack}`);
+      const serverData = error.response?.data;
+      const msg = serverData?.message || 'Failed to fetch table orders.';
+      const loc = serverData?.location || '';
+      const query = serverData?.query || '';
+      alert(`Error: ${msg}\nLoc: ${loc}\nTable: ${query}\nFull Detail: ${JSON.stringify(serverData)}`);
     } finally {
       setFetchingTable(false);
     }

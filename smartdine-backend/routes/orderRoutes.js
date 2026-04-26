@@ -199,11 +199,19 @@ router.patch('/:id/pay', async (req, res) => {
 
 router.get('/table/:tableNumber', async (req, res) => {
   try {
-    const orders = await Order.find({ tableNumber: req.params.tableNumber, status: { $nin: ['paid', 'cancelled'] } }).populate('items.menuItem');
+    const tableNumber = req.params.tableNumber;
+    console.log(`🔍 Fetching orders for Table: ${tableNumber}`);
+    const orders = await Order.find({ tableNumber, status: { $nin: ['paid', 'cancelled'] } }).populate('items.menuItem');
+    console.log(`✅ Found ${orders.length} orders for table ${tableNumber}`);
     res.json(orders);
   } catch (error) {
     console.error('❌ GET Table Orders Error:', error);
-    res.status(500).json({ message: error.message, stack: error.stack, location: 'router.get("/table/:tableNumber")' });
+    res.status(500).json({
+      message: error.message,
+      stack: error.stack,
+      location: 'router.get("/table/:tableNumber")',
+      query: req.params.tableNumber
+    });
   }
 });
 
