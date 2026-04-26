@@ -26,7 +26,7 @@ router.post('/add', async (req, res) => {
 
         customer.walletBalance += Number(amount);
         customer.transactions.unshift({
-            type: 'Credit',
+            txType: 'Credit',
             amount: Number(amount),
             reason: 'Manual Top-up',
             timestamp: new Date()
@@ -59,7 +59,7 @@ router.post('/convert-points', async (req, res) => {
         customer.walletBalance += cashAmount;
 
         customer.transactions.unshift({
-            type: 'Credit',
+            txType: 'Credit',
             amount: cashAmount,
             reason: `Converted ${pointsToConvert} points`,
             timestamp: new Date()

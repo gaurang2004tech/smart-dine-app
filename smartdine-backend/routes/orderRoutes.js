@@ -138,7 +138,7 @@ router.patch('/table/:tableNumber/pay', async (req, res) => {
         if (customer && customer.walletBalance >= total) {
           customer.walletBalance -= total;
           customer.transactions.unshift({
-            type: 'Debit',
+            txType: 'Debit',
             amount: total,
             reason: `Order at Table ${order.tableNumber}`,
             timestamp: new Date()
@@ -184,7 +184,7 @@ router.patch('/:id/pay', async (req, res) => {
       }
       customer.walletBalance -= total;
       customer.transactions.unshift({
-        type: 'Debit',
+        txType: 'Debit',
         amount: total,
         reason: `Payment for Order ${updatedOrder._id}`,
         timestamp: new Date()

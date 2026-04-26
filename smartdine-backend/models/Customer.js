@@ -17,7 +17,7 @@ const customerSchema = new mongoose.Schema({
     // 💳 Digital Wallet Fields
     walletBalance: { type: Number, default: 0 },
     transactions: [{
-        type: { type: String, enum: ['Credit', 'Debit'] },
+        txType: { type: String, enum: ['Credit', 'Debit'] },
         amount: Number,
         reason: String,
         timestamp: { type: Date, default: Date.now }

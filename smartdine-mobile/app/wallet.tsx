@@ -132,8 +132,8 @@ export default function WalletScreen() {
                                 <Text style={styles.txReason}>{tx.reason || 'Order Payment'}</Text>
                                 <Text style={styles.txDate}>{new Date(tx.timestamp).toLocaleDateString()}</Text>
                             </View>
-                            <Text style={[styles.txAmount, tx.type === 'Credit' ? styles.credit : styles.debit]}>
-                                {tx.type === 'Credit' ? '+' : '-'} ₹{tx.amount}
+                            <Text style={[styles.txAmount, tx.txType === 'Credit' ? styles.credit : styles.debit]}>
+                                {tx.txType === 'Credit' ? '+' : '-'} ₹{tx.amount}
                             </Text>
                         </View>
                     ))
