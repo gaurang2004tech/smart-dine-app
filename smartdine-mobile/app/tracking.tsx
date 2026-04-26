@@ -53,9 +53,11 @@ export default function TrackingScreen() {
       const res = await axios.get(`${API_URL}/api/orders/table/${order.tableNumber}`);
       setTableOrders(res.data);
       setSplitModalVisible(true);
-    } catch (error) {
+    } catch (error: any) {
       console.error(error);
-      alert("Failed to fetch table orders.");
+      const msg = error.response?.data?.message || 'Failed to fetch table orders.';
+      const stack = error.response?.data?.location || '';
+      alert(`${msg} ${stack}`);
     } finally {
       setFetchingTable(false);
     }
@@ -76,9 +78,11 @@ export default function TrackingScreen() {
       // Clear saved orderId — order is done, banner disappears from menu
       await AsyncStorage.removeItem('activeOrderId');
       setShowRating(true);
-    } catch (error) {
+    } catch (error: any) {
       console.error(error);
-      alert('Payment failed. Please try again.');
+      const msg = error.response?.data?.message || 'Payment failed.';
+      const loc = error.response?.data?.location || '';
+      alert(`${msg} ${loc}. Please try again.`);
     }
   };
 
@@ -100,9 +104,11 @@ export default function TrackingScreen() {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       setShowRating(true);
       fetchProfile(); // Update balance
-    } catch (error) {
+    } catch (error: any) {
       console.error(error);
-      alert('Wallet payment failed.');
+      const msg = error.response?.data?.message || 'Wallet payment failed.';
+      const loc = error.response?.data?.location || '';
+      alert(`${msg} ${loc}`);
     }
   };
 

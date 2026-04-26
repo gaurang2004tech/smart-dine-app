@@ -191,7 +191,7 @@ router.patch('/:id/pay', async (req, res) => {
     res.json(updatedOrder);
   } catch (error) {
     console.error('❌ Single Pay Error:', error);
-    res.status(500).json({ message: error.message, stack: error.stack });
+    res.status(500).json({ message: error.message, stack: error.stack, location: 'router.patch("/:id/pay")' });
   }
 });
 
@@ -200,7 +200,8 @@ router.get('/table/:tableNumber', async (req, res) => {
     const orders = await Order.find({ tableNumber: req.params.tableNumber, status: { $nin: ['paid', 'cancelled'] } }).populate('items.menuItem');
     res.json(orders);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error('❌ GET Table Orders Error:', error);
+    res.status(500).json({ message: error.message, stack: error.stack, location: 'router.get("/table/:tableNumber")' });
   }
 });
 
@@ -210,7 +211,8 @@ router.get('/:id', async (req, res) => {
     if (!order) return res.status(404).json({ message: 'Order not found' });
     res.json(order);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error('❌ GET Single Order Error:', error);
+    res.status(500).json({ message: error.message, stack: error.stack, location: 'router.get("/:id")' });
   }
 });
 
