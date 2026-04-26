@@ -74,7 +74,7 @@ export default function TrackingScreen() {
   const handlePayment = async () => {
     try {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      await axios.patch(`${API_URL}/api/orders/${orderId}/pay`);
+      await axios.patch(`${API_URL}/api/orders/${orderId}/pay`, {});
       // Clear saved orderId — order is done, banner disappears from menu
       await AsyncStorage.removeItem('activeOrderId');
       setShowRating(true);

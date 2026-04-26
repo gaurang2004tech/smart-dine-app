@@ -133,8 +133,9 @@ router.patch('/table/:tableNumber/pay', async (req, res) => {
 
     // Only mark status 'paid' if NOT using Wallet (to keep kitchen visibility)
     // Or if Wallet used, we just update payment method
-    let updateFields = { paymentMethod: req.body.paymentMethod || 'Cash' };
-    if (req.body.paymentMethod !== 'Wallet') {
+    const paymentMethod = req.body?.paymentMethod || 'Cash';
+    let updateFields = { paymentMethod };
+    if (paymentMethod !== 'Wallet') {
       updateFields.status = 'paid';
     }
 
@@ -159,8 +160,9 @@ router.patch('/:id/pay', async (req, res) => {
     if (!updatedOrder) return res.status(404).json({ message: 'Order not found' });
 
     const total = updatedOrder.items.reduce((sum, i) => sum + (i.menuItem?.price || 0) * (i.quantity || 1), 0);
+    const paymentMethod = req.body?.paymentMethod || 'Cash';
 
-    if (req.body.paymentMethod === 'Wallet') {
+    if (paymentMethod === 'Wallet') {
       const customer = await Customer.findOne({ phoneNumber: updatedOrder.customerPhone });
       if (!customer || customer.walletBalance < total) {
         return res.status(400).json({ message: 'Insufficient wallet balance' });
@@ -177,11 +179,11 @@ router.patch('/:id/pay', async (req, res) => {
     }
 
     // Only mark status 'paid' if it's Cash/Card, or if it was ALREADY served
-    if (req.body.paymentMethod !== 'Wallet' || updatedOrder.status === 'served') {
+    if (paymentMethod !== 'Wallet' || updatedOrder.status === 'served') {
       updatedOrder.status = 'paid';
     }
 
-    updatedOrder.paymentMethod = req.body.paymentMethod || 'Cash';
+    updatedOrder.paymentMethod = paymentMethod;
     await updatedOrder.save();
 
     await rewardPoints(updatedOrder.customerPhone, total);
