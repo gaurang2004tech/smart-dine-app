@@ -1,6 +1,7 @@
 const router = require('express').Router();
 const Customer = require('../models/Customer');
 const Ingredient = require('../models/Ingredient');
+const MenuItem = require('../models/menuItems'); // 🆕 Ensure MenuItem model is registered for populate
 
 const rewardPoints = async (phoneNumber, amount) => {
   if (!phoneNumber || isNaN(amount)) return;
@@ -190,7 +191,7 @@ router.patch('/:id/pay', async (req, res) => {
     res.json(updatedOrder);
   } catch (error) {
     console.error('❌ Single Pay Error:', error);
-    res.status(500).json({ message: error.message });
+    res.status(500).json({ message: error.message, stack: error.stack });
   }
 });
 

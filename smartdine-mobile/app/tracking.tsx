@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, SafeAreaView, ScrollView, Modal } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, SafeAreaView, ScrollView, Modal, Alert } from 'react-native';
 import { BlurView } from 'expo-blur';
 import axios from 'axios';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { io } from 'socket.io-client';
+import * as Haptics from 'expo-haptics';
 import OrderStatusTimeline from '../components/OrderStatusTimeline';
 import SplitBillModal from '../components/SplitBillModal';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -12,6 +13,7 @@ export default function TrackingScreen() {
   const { orderId } = useLocalSearchParams();
   const router = useRouter();
   const [order, setOrder] = useState<any>(null);
+  const [user, setUser] = useState<any>(null);
 
   // Rating modal state
   const [showRating, setShowRating] = useState(false);
@@ -34,6 +36,15 @@ export default function TrackingScreen() {
     }
   };
 
+  const fetchProfile = async () => {
+    try {
+      const res = await axios.get(`${API_URL}/api/users/9999999999`);
+      setUser(res.data);
+    } catch (err) {
+      console.error('Profile fetch failed', err);
+    }
+  };
+
   const fetchTableOrders = async () => {
     if (!order?.tableNumber) return;
 
@@ -52,6 +63,7 @@ export default function TrackingScreen() {
 
   useEffect(() => {
     fetchOrder();
+    fetchProfile();
     const socket = io(API_URL);
     socket.on('orderUpdated', () => fetchOrder());
     return () => { socket.disconnect(); };
@@ -59,6 +71,7 @@ export default function TrackingScreen() {
 
   const handlePayment = async () => {
     try {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       await axios.patch(`${API_URL}/api/orders/${orderId}/pay`);
       // Clear saved orderId — order is done, banner disappears from menu
       await AsyncStorage.removeItem('activeOrderId');
@@ -66,6 +79,30 @@ export default function TrackingScreen() {
     } catch (error) {
       console.error(error);
       alert('Payment failed. Please try again.');
+    }
+  };
+
+  const handleWalletPayment = async () => {
+    const total = billTotal;
+    if ((user?.walletBalance || 0) < total) {
+      Alert.alert("Insufficient Balance", "Please add funds to your wallet to continue.");
+      return;
+    }
+
+    try {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+      // 💳 Pay via Wallet (Backend handles debit + order update)
+      await axios.patch(`${API_URL}/api/orders/${orderId}/pay`, { paymentMethod: 'Wallet' });
+
+      // Clear active order
+      await AsyncStorage.removeItem('activeOrderId');
+
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      setShowRating(true);
+      fetchProfile(); // Update balance
+    } catch (error) {
+      console.error(error);
+      alert('Wallet payment failed.');
     }
   };
 
@@ -163,10 +200,28 @@ export default function TrackingScreen() {
               <Text style={styles.totalLabel}>Total to Pay</Text>
               <Text style={styles.totalAmount}>₹{billTotal}</Text>
             </View>
+
+            {/* 🆕 Points Info */}
+            <View style={styles.pointsEarnedContainer}>
+              <Text style={styles.pointsEarnedText}>
+                ✨ You will spend/earn <Text style={styles.pointsHighlight}>{Math.floor(billTotal)}</Text> Loyalty Points on this order
+              </Text>
+            </View>
           </View>
 
           <TouchableOpacity style={styles.payButton} onPress={handlePayment}>
-            <Text style={styles.payButtonText}>Pay ₹{billTotal} Now 💳</Text>
+            <Text style={styles.payButtonText}>Pay ₹{billTotal} with Cash/Card 💵</Text>
+          </TouchableOpacity>
+
+          {/* 🆕 WALLET PAYMENT BUTTON */}
+          <TouchableOpacity
+            style={[styles.walletPayButton, (user?.walletBalance || 0) < billTotal && styles.walletDisabled]}
+            onPress={handleWalletPayment}
+          >
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <Text style={styles.walletPayButtonText}>Pay with SmartDine Wallet 💳</Text>
+            </View>
+            <Text style={styles.walletBalanceSub}>Balance: ₹{user?.walletBalance || 0}</Text>
           </TouchableOpacity>
 
           {/* 🆕 SPLIT BILL ACTION */}
@@ -354,5 +409,52 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '800',
     letterSpacing: 0.5,
+  },
+  pointsEarnedContainer: {
+    backgroundColor: '#F0F9FF',
+    padding: 12,
+    borderRadius: 12,
+    marginTop: 15,
+    borderWidth: 1,
+    borderColor: '#BAE6FD',
+  },
+  pointsEarnedText: {
+    fontSize: 13,
+    color: '#0369A1',
+    fontWeight: '600',
+    textAlign: 'center',
+    lineHeight: 18,
+  },
+  pointsHighlight: {
+    fontWeight: '900',
+    color: '#0284C7',
+  },
+  walletPayButton: {
+    backgroundColor: '#6C5CE7',
+    paddingVertical: 16,
+    borderRadius: 16,
+    alignItems: 'center',
+    marginTop: 12,
+    shadowColor: '#6C5CE7',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.3,
+    shadowRadius: 10,
+    elevation: 4,
+  },
+  walletDisabled: {
+    backgroundColor: '#A0AEC0',
+    shadowOpacity: 0,
+    elevation: 0,
+  },
+  walletPayButtonText: {
+    color: '#FFF',
+    fontSize: 18,
+    fontWeight: '800',
+  },
+  walletBalanceSub: {
+    color: 'rgba(255,255,255,0.8)',
+    fontSize: 12,
+    fontWeight: '600',
+    marginTop: 2,
   },
 });

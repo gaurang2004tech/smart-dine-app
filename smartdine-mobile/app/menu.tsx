@@ -188,15 +188,8 @@ export default function MenuScreen() {
   };
 
   const showCheckoutAlert = () => {
-    Alert.alert(
-      "Secure Checkout",
-      "Choose your preferred payment method:",
-      [
-        { text: "SmartDine Wallet 💳", onPress: () => placeOrder('Wallet') },
-        { text: "Pay at counter (Cash)", onPress: () => placeOrder('Cash') },
-        { text: "Cancel", style: "cancel" }
-      ]
-    );
+    // 🚀 BYPASS PAYMENT SELECTION - Place order immediately (Pending status)
+    placeOrder('Cash');
   };
 
   // ── Star renderer ─────────────────────────────────────────────────────────
@@ -398,6 +391,15 @@ export default function MenuScreen() {
       )}
 
       <TouchableOpacity style={styles.callWaiterFab} onPress={callWaiter}><Text style={{ fontSize: 24 }}>🛎️</Text></TouchableOpacity>
+      <ItemDetailModal
+        item={selectedItem}
+        rating={selectedItem ? ratings[selectedItem._id] : undefined}
+        visible={!!selectedItem}
+        onClose={() => setSelectedItem(null)}
+        onAdd={addToCart}
+        onRemove={removeFromCart}
+        count={getItemCount}
+      />
       <Confetti ref={confettiRef} />
     </SafeAreaView>
   );
