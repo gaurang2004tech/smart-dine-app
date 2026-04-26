@@ -78,7 +78,7 @@ export default function SplitBillModal({ visible, onClose, tableNumber, orders }
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
 
             // 🆕 Actually call the payment API for the table!
-            await axios.patch(`${API_URL}/api/orders/table/${tableNumber}/pay`);
+            await axios.patch(`${API_URL}/api/orders/table/${tableNumber}/pay`, {});
 
             // 🆕 Clear local tracking state so the banner disappears
             await AsyncStorage.removeItem('activeOrderId');
@@ -89,9 +89,12 @@ export default function SplitBillModal({ visible, onClose, tableNumber, orders }
             // Redirect to splash screen
             router.dismissAll();
             router.push('/');
-        } catch (error) {
+        } catch (error: any) {
             console.error(error);
-            alert("Payment synchronization failed. Please try again.");
+            const serverData = error.response?.data;
+            const msg = serverData?.message || 'Payment synchronization failed.';
+            const loc = serverData?.location || '';
+            alert(`${msg} ${loc}\nDetail: ${JSON.stringify(serverData)}`);
         }
     };
 
