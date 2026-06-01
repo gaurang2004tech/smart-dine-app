@@ -1,5 +1,6 @@
 const router = require('express').Router();
 const Customer = require('../models/Customer');
+const verifyToken = require('../middleware/auth');
 
 // Helper to determine tier
 const calculateTier = (points) => {
@@ -24,13 +25,14 @@ router.get('/:phoneNumber', async (req, res) => {
 });
 
 // POST: Add points manually (for testing)
-router.post('/:phoneNumber/reward', async (req, res) => {
+router.post('/:phoneNumber/reward', verifyToken, async (req, res) => {
     try {
         const { pointsToAdd } = req.body;
         const customer = await Customer.findOne({ phoneNumber: req.params.phoneNumber });
         if (!customer) return res.status(404).json({ message: 'User not found' });
 
         await customer.awardPoints(pointsToAdd);
+        await customer.save(); // Bug 9 fix: save explicitly since awardPoints no longer auto-saves
 
         res.json(customer);
     } catch (error) {
@@ -39,7 +41,7 @@ router.post('/:phoneNumber/reward', async (req, res) => {
 });
 
 // POST: Claim a Gourmet Gift (Black Card only)
-router.post('/:phoneNumber/claim-gift', async (req, res) => {
+router.post('/:phoneNumber/claim-gift', verifyToken, async (req, res) => {
     try {
         const customer = await Customer.findOne({ phoneNumber: req.params.phoneNumber });
         if (!customer) return res.status(404).json({ message: 'User not found' });

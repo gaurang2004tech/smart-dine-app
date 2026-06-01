@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import axios from 'axios';
 import { io } from 'socket.io-client';
 import { QRCodeSVG } from 'qrcode.react'; // The new package!
+import API_URL from '../config';
 import './AdminDashboard.css'; // We will create this next
 
 export default function AdminDashboard() {
@@ -26,7 +27,7 @@ export default function AdminDashboard() {
   const [loadingAi, setLoadingAi] = useState(false);
   const [waiterCalls, setWaiterCalls] = useState([]); // 🆕 Service requests
   // ⚠️ Remember to use your actual backend IP!
-  const API_URL = 'https://smartdine-backend-ao8c.onrender.com/api/menu';
+  const MENU_API_URL = `${API_URL}/api/menu`;
 
   const fetchMenu = async () => {
     try {
@@ -40,7 +41,7 @@ export default function AdminDashboard() {
     setLoadingAi(true);
     try {
       // ⚠️ Note: We use /api/ai/insights here
-      const res = await axios.get('https://smartdine-backend-ao8c.onrender.com/api/ai/insights', {
+      const res = await axios.get(`${API_URL}/api/ai/insights`, {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
       });
       setInsight(res.data.insight);
@@ -61,7 +62,7 @@ export default function AdminDashboard() {
     loadData();
 
     // ── Real-time Waiter Calls ──
-    const socket = io('https://smartdine-backend-ao8c.onrender.com');
+    const socket = io(API_URL);
     socket.on('callWaiter', (data) => {
       setWaiterCalls(prev => [...prev, { ...data, id: Date.now() }]);
     });
@@ -74,7 +75,7 @@ export default function AdminDashboard() {
     e.preventDefault();
     setIsSubmitting(true);
     try {
-      await axios.post(API_URL, {
+      await axios.post(MENU_API_URL, {
         name: newItem.name,
         price: Number(newItem.price),
         category: newItem.category,
@@ -97,9 +98,9 @@ export default function AdminDashboard() {
     // 🌟 1. Grab the token from storage
     const token = localStorage.getItem('token');
 
-    const finalUrl = API_URL.endsWith('/api/menu')
-      ? `${API_URL}/${id}`
-      : `${API_URL}/api/menu/${id}`;
+    const finalUrl = MENU_API_URL.endsWith('/api/menu')
+      ? `${MENU_API_URL}/${id}`
+      : `${MENU_API_URL}/api/menu/${id}`;
 
     try {
       // 🌟 2. Send the token to the backend bouncer in the headers!

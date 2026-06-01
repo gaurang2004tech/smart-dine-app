@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import API_URL_BASE from '../config';
 import './InventoryDashboard.css';
 
 const InventoryDashboard = () => {
@@ -16,7 +17,7 @@ const InventoryDashboard = () => {
     const [editingIng, setEditingIng] = useState(null);
     const [newSup, setNewSup] = useState({ name: '', phone: '', categories: '' });
 
-    const API_URL = "https://smartdine-backend-ao8c.onrender.com/api/inventory";
+    const API_URL = `${API_URL_BASE}/api/inventory`;
 
     const fetchData = async () => {
         try {

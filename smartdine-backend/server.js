@@ -53,7 +53,7 @@ app.use('/api/inventory', inventoryRoutes);
 app.use('/api/wallet', walletRoutes);
 
 // 🛎️ SERVICE CALLS (Call Waiter)
-app.post('/api/notifications/call-waiter', (req, res) => {
+app.post('/api/notifications/call-waiter', verifyToken, (req, res) => {
   const { tableNumber } = req.body;
   const io = req.app.get('io');
   if (io) {

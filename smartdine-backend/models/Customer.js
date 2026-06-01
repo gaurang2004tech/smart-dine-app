@@ -48,7 +48,7 @@ customerSchema.methods.awardPoints = async function (amount) {
     } else {
         this.tier = 'Silver';
     }
-    return this.save();
+    return this; // Caller is responsible for calling .save() to avoid double-save race conditions
 };
 
 module.exports = mongoose.model('Customer', customerSchema);

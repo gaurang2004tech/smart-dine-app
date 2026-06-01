@@ -41,6 +41,13 @@
     gap: 8px;
 }
 
+/* Bug 8 fix: show red badge when socket is actually disconnected */
+.live-badge.disconnected {
+    background: #fff1f2;
+    color: #be123c;
+    border-color: #fecdd3;
+}
+
 .ticket-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));

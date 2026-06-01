@@ -8,7 +8,7 @@
  *   import LiveOrderBadge from '../components/LiveOrderBadge';
  *
  *   // Inside KitchenDashboard's <header> JSX:
- *   <LiveOrderBadge apiUrl="https://smartdine-backend-ao8c.onrender.com" />
+ *   <LiveOrderBadge apiUrl={API_URL} />
  */
 
 import { useState, useEffect, useRef } from 'react';

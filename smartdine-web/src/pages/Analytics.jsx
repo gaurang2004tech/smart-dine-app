@@ -14,11 +14,8 @@
  */
 
 import { useState, useEffect } from 'react';
-import axios from 'axios';
-import { io } from 'socket.io-client';
+import API_URL from '../config';
 import './Analytics.css';
-
-const API_URL = 'https://smartdine-backend-ao8c.onrender.com';
 
 export default function Analytics() {
     const [orders, setOrders] = useState([]);

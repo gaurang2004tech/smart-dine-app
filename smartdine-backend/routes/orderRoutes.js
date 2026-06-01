@@ -10,6 +10,7 @@ const rewardPoints = async (phoneNumber, amount) => {
     if (customer) {
       const pointsToAdd = Math.floor(amount * 0.1);
       await customer.awardPoints(pointsToAdd);
+      await customer.save(); // Bug 9 fix: save explicitly since awardPoints no longer auto-saves
       console.log(`✅ Awarded ${pointsToAdd} points to ${phoneNumber}. New total: ${customer.points}`);
     }
   } catch (err) {
@@ -25,17 +26,7 @@ router.use((req, res, next) => {
 const Order = require('../models/order');
 const verifyToken = require('../middleware/auth');
 
-router.post('/place', async (req, res) => {
-  try {
-    const newOrder = new Order(req.body);
-    await newOrder.save();
-    const io = req.app.get('io');
-    if (io) io.emit('newOrder', newOrder);
-    res.status(201).json(newOrder);
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-});
+// NOTE: POST /place was removed (Bug 4) — use POST / instead
 
 router.get('/', async (req, res) => {
   try {
@@ -108,32 +99,32 @@ router.post('/', async (req, res) => {
 
 router.patch('/table/:tableNumber/pay', async (req, res) => {
   try {
+    const paymentMethod = req.body?.paymentMethod || 'Cash';
     const orders = await Order.find({ tableNumber: req.params.tableNumber, status: { $nin: ['paid', 'cancelled'] } }).populate('items.menuItem');
 
     for (const order of orders) {
       const total = order.items.reduce((sum, i) => sum + (i.menuItem?.price || 0) * (i.quantity || 1), 0);
 
-      if (req.body.paymentMethod === 'Wallet') {
+      if (paymentMethod === 'Wallet') {
+        // Bug 5 fix: validate BEFORE mutating, so no partial deduction on failure
         const customer = await Customer.findOne({ phoneNumber: order.customerPhone });
-        if (customer && customer.walletBalance >= total) {
-          customer.walletBalance -= total;
-          customer.transactions.unshift({
-            txType: 'Debit',
-            amount: total,
-            reason: `Order at Table ${order.tableNumber}`,
-            timestamp: new Date()
-          });
-          await customer.save();
-          order.isPaid = true; // ✅ Secured but don't mark 'paid' status yet!
-          await order.save();
+        if (!customer || customer.walletBalance < total) {
+          return res.status(400).json({ message: `Insufficient wallet balance for order at Table ${order.tableNumber}` });
         }
+        customer.walletBalance -= total;
+        customer.transactions.unshift({
+          txType: 'Debit',
+          amount: total,
+          reason: `Order at Table ${order.tableNumber}`,
+          timestamp: new Date()
+        });
+        await customer.save();
+        order.isPaid = true;
+        await order.save();
       }
       await rewardPoints(order.customerPhone, total);
     }
 
-    // Only mark status 'paid' if NOT using Wallet (to keep kitchen visibility)
-    // Or if Wallet used, we just update payment method
-    const paymentMethod = req.body?.paymentMethod || 'Cash';
     let updateFields = { paymentMethod };
     if (paymentMethod !== 'Wallet') {
       updateFields.status = 'paid';
@@ -150,7 +141,7 @@ router.patch('/table/:tableNumber/pay', async (req, res) => {
     res.json({ success: true, message: `Processed payment for ${req.params.tableNumber}` });
   } catch (error) {
     console.error('❌ Table Pay Error:', error);
-    res.status(500).json({ message: error.message });
+    res.status(500).json({ message: error.message }); // Bug 6 fix: no stack/location exposed
   }
 });
 
@@ -193,7 +184,7 @@ router.patch('/:id/pay', async (req, res) => {
     res.json(updatedOrder);
   } catch (error) {
     console.error('❌ Single Pay Error:', error);
-    res.status(500).json({ message: error.message, stack: error.stack, location: 'router.patch("/:id/pay")' });
+    res.status(500).json({ message: error.message }); // Bug 6 fix: no stack/location exposed
   }
 });
 
@@ -206,12 +197,7 @@ router.get('/table/:tableNumber', async (req, res) => {
     res.json(orders);
   } catch (error) {
     console.error('❌ GET Table Orders Error:', error);
-    res.status(500).json({
-      message: error.message,
-      stack: error.stack,
-      location: 'router.get("/table/:tableNumber")',
-      query: req.params.tableNumber
-    });
+    res.status(500).json({ message: error.message }); // Bug 6 fix: no stack/location exposed
   }
 });
 
@@ -222,7 +208,7 @@ router.get('/:id', async (req, res) => {
     res.json(order);
   } catch (error) {
     console.error('❌ GET Single Order Error:', error);
-    res.status(500).json({ message: error.message, stack: error.stack, location: 'router.get("/:id")' });
+    res.status(500).json({ message: error.message }); // Bug 6 fix: no stack/location exposed
   }
 });
 

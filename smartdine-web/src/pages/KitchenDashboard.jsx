@@ -2,17 +2,18 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { io } from 'socket.io-client';
 import { useNavigate } from 'react-router-dom';
+import API_URL from '../config';
 import './KitchenDashboard.css';
 import KitchenSoundAlert from '../components/KitchenSoundAlert';
 import LiveOrderBadge from '../components/LiveOrderBadge';
 
 export default function KitchenDashboard() {
   const [orders, setOrders] = useState([]);
-  const [waiterCalls, setWaiterCalls] = useState([]); // 🆕 Active service requests
+  const [waiterCalls, setWaiterCalls] = useState([]);
+  const [socketConnected, setSocketConnected] = useState(false); // Bug 8 fix: track real socket state
   const navigate = useNavigate();
 
-  // ⚠️ Ensure this IP exactly matches your backend IP!
-  const API_URL = 'https://smartdine-backend-ao8c.onrender.com';
+  // ⚠️ Ensure this API URL matches your backend!
 
   const fetchOrders = async () => {
     try {
@@ -50,6 +51,9 @@ export default function KitchenDashboard() {
     // --- 2. REAL-TIME SOCKET CONNECTION ---
     const socket = io(API_URL);
 
+    // Bug 8 fix: track real connection state
+    socket.on('connect', () => setSocketConnected(true));
+    socket.on('disconnect', () => setSocketConnected(false));
     // Listen for status changes
     socket.on('orderUpdated', () => {
       fetchOrders();
@@ -110,10 +114,12 @@ export default function KitchenDashboard() {
     <div className="kitchen-layout">
       <header className="kitchen-header">
         <h1>👨‍🍳 Kitchen Command Center</h1>
-        <div className="live-badge">⚡ SOCKET CONNECTED</div>
-        <LiveOrderBadge apiUrl="https://smartdine-backend-ao8c.onrender.com" />
+        <div className={`live-badge ${socketConnected ? 'connected' : 'disconnected'}`}>
+          {socketConnected ? '⚡ SOCKET CONNECTED' : '🔴 DISCONNECTED'}
+        </div>
+        <LiveOrderBadge apiUrl={API_URL} />
       </header>
-      <KitchenSoundAlert apiUrl="https://smartdine-backend-ao8c.onrender.com" />
+      <KitchenSoundAlert apiUrl={API_URL} />
 
       {/* 🛎️ SERVICE REQUEST TOASTS */}
       <div className="service-calls-container">

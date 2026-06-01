@@ -5,7 +5,7 @@ const Customer = require('../models/Customer');
 // 1. GET: Fetch Wallet details
 router.get('/:phone', async (req, res) => {
     try {
-        const customer = await Customer.findOne({ phoneNumber: req.phone || req.params.phone });
+        const customer = await Customer.findOne({ phoneNumber: req.params.phone });
         if (!customer) return res.status(404).json({ message: 'User not found' });
         res.json({
             balance: customer.walletBalance || 0,

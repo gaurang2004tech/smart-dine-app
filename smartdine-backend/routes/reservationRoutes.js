@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const Reservation = require('../models/Reservation');
+const verifyToken = require('../middleware/auth');
 
 // @route   POST /api/reservations
 // @desc    Create a new reservation
@@ -42,7 +43,7 @@ router.get('/', async (req, res) => {
 // @route   PATCH /api/reservations/:id
 // @desc    Update reservation status or assigned table
 // @access  Private (Admin)
-router.patch('/:id', async (req, res) => {
+router.patch('/:id', verifyToken, async (req, res) => {
     try {
         const { status, tableNumber } = req.body;
         const reservation = await Reservation.findById(req.params.id);
@@ -65,7 +66,7 @@ router.patch('/:id', async (req, res) => {
 // @route   DELETE /api/reservations/:id
 // @desc    Delete a reservation
 // @access  Private (Admin)
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', verifyToken, async (req, res) => {
     try {
         const reservation = await Reservation.findById(req.params.id);
 

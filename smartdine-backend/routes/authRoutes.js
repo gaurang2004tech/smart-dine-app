@@ -4,8 +4,8 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const Staff = require('../models/Staff');
 
-// Secret key for signing tokens (In production, put this in your .env file!)
-const JWT_SECRET = 'super_secret_smartdine_key_123';
+// Secret key for signing tokens — loaded securely from environment variables
+const JWT_SECRET = process.env.JWT_SECRET;
 
 // 1. REGISTER (Run this once via Postman/ThunderClient to create your first account)
 router.post('/register', async (req, res) => {

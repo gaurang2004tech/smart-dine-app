@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
+import API_URL from '../config';
 import './Login.css';
 
 export default function Login() {
@@ -17,7 +18,7 @@ export default function Login() {
 
     try {
       // ⚠️ Replace with your Laptop's IP
-      const res = await axios.post('https://smartdine-backend-ao8c.onrender.com/api/auth/login', {
+      const res = await axios.post(`${API_URL}/api/auth/login`, {
         username,
         password
       });

@@ -1,5 +1,5 @@
 const jwt = require('jsonwebtoken');
-const JWT_SECRET = 'super_secret_smartdine_key_123';
+const JWT_SECRET = process.env.JWT_SECRET;
 
 module.exports = function (req, res, next) {
   // Grab the token from the request header
@@ -12,7 +12,7 @@ module.exports = function (req, res, next) {
     // Verify the token is real (and remove the 'Bearer ' string if present)
     const actualToken = token.startsWith('Bearer ') ? token.slice(7) : token;
     const verified = jwt.verify(actualToken, JWT_SECRET);
-    
+
     req.user = verified; // Add the user info to the request
     next(); // Let them pass!
   } catch (err) {
