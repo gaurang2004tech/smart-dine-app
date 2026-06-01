@@ -31,7 +31,7 @@ export default function AdminDashboard() {
 
   const fetchMenu = async () => {
     try {
-      const res = await axios.get(API_URL);
+      const res = await axios.get(MENU_API_URL); // Fixed: was incorrectly using API_URL (root) instead of MENU_API_URL
       setMenuItems(res.data);
     } catch (err) {
       console.error("Failed to fetch menu", err);

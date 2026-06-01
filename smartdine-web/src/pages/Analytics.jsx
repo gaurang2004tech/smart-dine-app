@@ -14,6 +14,8 @@
  */
 
 import { useState, useEffect } from 'react';
+import axios from 'axios';
+import { io } from 'socket.io-client';
 import API_URL from '../config';
 import './Analytics.css';
 
